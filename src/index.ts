@@ -1,8 +1,4 @@
-import { rot13 } from "./rot13/rot13";
-import { writeOutput, args } from "./infrastructure/command-line";
+import { writeOutpout, args } from "./infrastructure/command-line";
+import { app } from "./app/app";
 
-const input = args()[0];
-
-const output = rot13(input);
-
-writeOutput(output);
+app.run({ writeOutpout, args });

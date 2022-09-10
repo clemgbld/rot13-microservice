@@ -1,4 +1,4 @@
-export const writeOutput = (text: string) => {
+export const writeOutpout = (text: string) => {
   console.log(text);
 };
 
