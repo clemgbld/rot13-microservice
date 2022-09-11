@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1662824094053" clover="3.2.0">
-  <project timestamp="1662824094053" name="All files">
-    <metrics statements="18" coveredstatements="18" conditionals="6" coveredconditionals="6" methods="6" coveredmethods="6" elements="30" coveredelements="30" complexity="0" loc="18" ncloc="18" packages="2" files="2" classes="2"/>
+<coverage generated="1662895558135" clover="3.2.0">
+  <project timestamp="1662895558135" name="All files">
+    <metrics statements="26" coveredstatements="26" conditionals="7" coveredconditionals="6" methods="12" coveredmethods="12" elements="45" coveredelements="44" complexity="0" loc="26" ncloc="26" packages="3" files="3" classes="3"/>
     <package name="app">
       <metrics statements="8" coveredstatements="8" conditionals="2" coveredconditionals="2" methods="1" coveredmethods="1"/>
       <file name="app.ts" path="/Users/cgombauld/node-js-tdd/src/app/app.ts">
@@ -30,6 +30,20 @@
         <line num="12" count="2" type="stmt"/>
         <line num="13" count="8" type="stmt"/>
         <line num="15" count="84" type="stmt"/>
+      </file>
+    </package>
+    <package name="infrastructure">
+      <metrics statements="8" coveredstatements="8" conditionals="1" coveredconditionals="0" methods="6" coveredmethods="6"/>
+      <file name="command-line.ts" path="/Users/cgombauld/node-js-tdd/src/infrastructure/command-line.ts">
+        <metrics statements="8" coveredstatements="8" conditionals="1" coveredconditionals="0" methods="6" coveredmethods="6"/>
+        <line num="8" count="3" type="cond" truecount="0" falsecount="1"/>
+        <line num="16" count="1" type="stmt"/>
+        <line num="18" count="3" type="stmt"/>
+        <line num="20" count="3" type="stmt"/>
+        <line num="21" count="3" type="stmt"/>
+        <line num="22" count="3" type="stmt"/>
+        <line num="24" count="3" type="stmt"/>
+        <line num="26" count="3" type="stmt"/>
       </file>
     </package>
   </project>

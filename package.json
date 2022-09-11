@@ -19,8 +19,10 @@
   },
   "dependencies": {
     "@types/jest": "^29.0.0",
+    "@types/ramda": "^0.28.15",
     "jest": "28",
     "nodemon": "^2.0.19",
+    "ramda": "^0.28.0",
     "rimraf": "^3.0.2",
     "supertest": "^6.2.4",
     "ts-jest": "^28.0.8",

@@ -1,4 +1,4 @@
-import { writeOutpout, args } from "./infrastructure/command-line";
+import { commandLine } from "./infrastructure/command-line";
 import { app } from "./app/app";
 
-app.run({ writeOutpout, args });
+app.run(commandLine(process));
