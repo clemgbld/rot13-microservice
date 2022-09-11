@@ -1,5 +1,5 @@
-import { app } from "./app";
-import { commandLine, nullProcess } from "../infrastructure/command-line";
+import { app } from "../app";
+import { commandLine, nullProcess } from "../../infrastructure/command-line";
 
 describe("app", () => {
   const SUTBuilder = () => ({
