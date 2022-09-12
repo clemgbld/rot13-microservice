@@ -5,7 +5,7 @@ interface NullProcess {
   argv: string[];
 }
 
-export const nullProcess = (args: string[] = []) => ({
+export const nullProcess = (args: string[] = []): NullProcess => ({
   stdout: {
     write: (text: string): void => {},
   },

@@ -1,14 +1,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const app_1 = require("./app");
+const app_1 = require("../app");
+const command_line_1 = require("../../infrastructure/command-line");
 describe("app", () => {
     const SUTBuilder = () => ({
         excuteCommandLineWith: (argsOutpout) => {
-            const writeOutpout = jest.fn();
-            const commandLine = { writeOutpout, args: () => argsOutpout };
-            app_1.app.run(commandLine);
+            const nullableCommandLine = (0, command_line_1.commandLine)((0, command_line_1.nullProcess)(argsOutpout));
+            app_1.app.run(nullableCommandLine);
             return {
-                expectCommanLineToPrint: (expectedOutput) => expect(writeOutpout).toHaveBeenCalledWith(expectedOutput),
+                expectCommanLineToPrint: (expectedOutput) => expect(nullableCommandLine.getLastOutpout()).toEqual(`${expectedOutput}\n`),
             };
         },
     });
