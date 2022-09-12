@@ -1,3 +1,4 @@
+import EventEmitter from "events";
 import http from "http";
 import { pipe } from "ramda";
 import { withConstructor } from "../utils/withConstructor";
@@ -7,19 +8,15 @@ interface StarAsync {
 }
 
 export interface HttpServer {
-  create: () => HttpServer;
   isStarted: () => boolean;
   startAsync: ({ port }: StarAsync) => Promise<unknown>;
   stopAsync: () => Promise<unknown>;
 }
 
-const witHttpServer = (o: any) => {
-  let server: http.Server | undefined;
+const withHttpServer = (http: any) => (o: any) => {
+  let server: any | undefined;
   return {
     ...o,
-    create: function () {
-      return this;
-    },
     isStarted: () => server !== undefined,
     startAsync: async ({ port }: StarAsync) =>
       new Promise((resolve, reject) => {
@@ -27,7 +24,7 @@ const witHttpServer = (o: any) => {
           throw new Error("Server must be closed before being restared");
         }
         server = http.createServer();
-        server.on("error", (err) => {
+        server.on("error", (err: any) => {
           reject(
             new Error(`Couldn't start server due to error: ${err.message}`)
           );
@@ -48,5 +45,25 @@ const witHttpServer = (o: any) => {
   };
 };
 
-export const httpServer = () =>
-  pipe(witHttpServer, withConstructor(httpServer))({});
+class NullNodeServer extends EventEmitter {
+  constructor() {
+    super();
+  }
+  listen() {
+    setImmediate(() => this.emit("listening"));
+  }
+
+  close() {
+    setImmediate(() => this.emit("close"));
+  }
+}
+
+const nullHttp = {
+  createServer: () => new NullNodeServer(),
+};
+
+export const httpServer = {
+  create: () => pipe(withHttpServer(http), withConstructor(httpServer))({}),
+  createNull: () =>
+    pipe(withHttpServer(nullHttp), withConstructor(httpServer))({}),
+};
