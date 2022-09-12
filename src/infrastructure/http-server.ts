@@ -1,4 +1,6 @@
 import http from "http";
+import { pipe } from "ramda";
+import { withConstructor } from "../utils/withConstructor";
 
 interface StarAsync {
   port: number;
@@ -6,16 +8,19 @@ interface StarAsync {
 
 export interface HttpServer {
   create: () => HttpServer;
+  isStarted: () => boolean;
   startAsync: ({ port }: StarAsync) => Promise<unknown>;
   stopAsync: () => Promise<unknown>;
 }
 
-export const httpServer = () => {
+const witHttpServer = (o: any) => {
   let server: http.Server | undefined;
   return {
+    ...o,
     create: function () {
       return this;
     },
+    isStarted: () => server !== undefined,
     startAsync: async ({ port }: StarAsync) =>
       new Promise((resolve, reject) => {
         if (server !== undefined) {
@@ -35,9 +40,13 @@ export const httpServer = () => {
         if (!server) {
           throw new Error("Can't stop server because it is not running");
         }
+
         server.on("close", resolve);
         server.close();
         server = undefined;
       }),
   };
 };
+
+export const httpServer = () =>
+  pipe(witHttpServer, withConstructor(httpServer))({});

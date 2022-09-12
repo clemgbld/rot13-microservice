@@ -1,6 +1,6 @@
 import { httpServer, HttpServer } from "../http-server";
 
-const PORT = 5001;
+const PORT = 3001;
 
 const startAsync = async (server: HttpServer) =>
   await server.startAsync({ port: PORT });
@@ -13,7 +13,7 @@ const startAndStopAsync = async (server: HttpServer) => {
 };
 
 const finallyStartAndStopAsync = async (
-  fnAysync: (server: HttpServer) => Promise<unknown>
+  fnAysync: (server: HttpServer) => Promise<unknown> | void
 ) => {
   const server = httpServer().create();
   await startAsync(server);
@@ -25,10 +25,22 @@ const finallyStartAndStopAsync = async (
 };
 
 describe("HTTP Server", () => {
+  it("says when server is started", async () => {
+    const server = httpServer().create();
+    expect(server.isStarted()).toBe(false);
+    await startAsync(server);
+    try {
+      expect(server.isStarted()).toBe(true);
+    } finally {
+      await stopAsync(server);
+      expect(server.isStarted()).toBe(false);
+    }
+  });
+
   it("fails gracefully when server has startup error", async () => {
     await finallyStartAndStopAsync(async (_) => {
-      const server2 = httpServer().create();
-      await expect(async () => await startAsync(server2)).rejects.toThrowError(
+      const server = httpServer().create();
+      await expect(async () => await startAsync(server)).rejects.toThrowError(
         /^Couldn't start server due to error: listen EADDRINUSE:/
       );
     });
