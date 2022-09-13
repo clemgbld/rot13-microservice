@@ -29,6 +29,16 @@ const withHttpServer = (http: any) => (o: any) => {
             new Error(`Couldn't start server due to error: ${err.message}`)
           );
         });
+        server.on(
+          "request",
+          (
+            nodeRequest: http.RequestOptions,
+            nodeResponse: http.ServerResponse
+          ) => {
+            console.log("RECEIVED");
+            nodeResponse.end("node response");
+          }
+        );
         server.on("listening", resolve);
         server.listen(port);
       }),

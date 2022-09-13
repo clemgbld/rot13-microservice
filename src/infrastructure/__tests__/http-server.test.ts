@@ -1,6 +1,7 @@
+import http from "http";
 import { httpServer, HttpServer } from "../http-server";
 
-const PORT = 5005;
+const PORT = 3008;
 
 const startAsync = async (server: HttpServer) =>
   await server.startAsync({ port: PORT });
@@ -57,6 +58,24 @@ describe("HTTP Server", () => {
       await expect(async () => await startAsync(server)).rejects.toThrow(
         "Server must be closed before being restared"
       );
+    });
+  });
+
+  describe("requests and responses", () => {
+    it("runs a function when a request is received and serves the results", async () => {
+      await finallyStartAndStopAsync(async () => {
+        return await new Promise((resolve, reject) => {
+          console.log("SENDING");
+          const request = http.get({ port: PORT });
+          request.on("response", (response) => {
+            console.log("RECEIVED RES");
+            response.resume();
+            response.on("end", () => {
+              resolve("resolved");
+            });
+          });
+        });
+      });
     });
   });
 
