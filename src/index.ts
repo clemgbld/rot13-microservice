@@ -1,4 +1,5 @@
 import { commandLine } from "./infrastructure/command-line";
-import { app } from "./app/app";
+import { httpServer } from "./infrastructure/http-server";
+import { app } from "./app/rot13-server";
 
-app.run(commandLine(process));
+app(commandLine(process), httpServer.create()).startAsync();

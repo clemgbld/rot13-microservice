@@ -5,6 +5,12 @@ interface NullProcess {
   argv: string[];
 }
 
+export interface CommandLine {
+  writeOutpout: (text: string) => void;
+  args: () => string[];
+  getLastOutpout: () => string;
+}
+
 export const nullProcess = (args: string[] = []): NullProcess => ({
   stdout: {
     write: (text: string): void => {},
@@ -13,7 +19,9 @@ export const nullProcess = (args: string[] = []): NullProcess => ({
   argv: ["null_process_node", "null_process_script.js", ...args],
 });
 
-export const commandLine = (process: NodeJS.Process | NullProcess) => {
+export const commandLine = (
+  process: NodeJS.Process | NullProcess
+): CommandLine => {
   let lastOutpout: string;
   return {
     writeOutpout: (text: string): void => {
