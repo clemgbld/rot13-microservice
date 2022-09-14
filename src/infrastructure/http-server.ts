@@ -64,7 +64,10 @@ const withHttpServer = (http: Dependancyhttp) => (o: any) => {
         });
         server.on(
           "request",
-          (_: http.IncomingMessage, nodeResponse: http.ServerResponse) => {
+          (
+            nodeRequest: http.IncomingMessage,
+            nodeResponse: http.ServerResponse
+          ) => {
             const { status, body, headers } = onRequestAsync();
             nodeResponse.statusCode = status;
             Object.entries(headers).forEach(([name, value]) =>
