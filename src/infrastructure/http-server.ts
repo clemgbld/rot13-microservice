@@ -3,8 +3,34 @@ import http from "http";
 import { pipe } from "ramda";
 import { withConstructor } from "../utils/withConstructor";
 
+class NullNodeServer extends EventEmitter {
+  constructor() {
+    super();
+  }
+  listen() {
+    setImmediate(() => this.emit("listening"));
+  }
+
+  close() {
+    setImmediate(() => this.emit("close"));
+  }
+}
+
+const nullHttp = {
+  createServer: () => new NullNodeServer(),
+};
+
+interface Response {
+  status: number;
+  body?: string;
+  headers: Record<string, string>;
+}
+
+export type OnRequestAsync = () => Response;
+
 interface StarAsync {
   port: number;
+  onRequestAsync: OnRequestAsync;
 }
 
 export interface HttpServer {
@@ -13,12 +39,19 @@ export interface HttpServer {
   stopAsync: () => Promise<unknown>;
 }
 
-const withHttpServer = (http: any) => (o: any) => {
-  let server: any | undefined;
+type Dependancyhttp = typeof http | typeof nullHttp;
+
+interface HttpServerObj {
+  create: () => any;
+  createNull: () => any;
+}
+
+const withHttpServer = (http: Dependancyhttp) => (o: any) => {
+  let server: http.Server | NullNodeServer | undefined;
   return {
     ...o,
     isStarted: () => server !== undefined,
-    startAsync: async ({ port }: StarAsync) =>
+    startAsync: async ({ port, onRequestAsync }: StarAsync) =>
       new Promise((resolve, reject) => {
         if (server !== undefined) {
           throw new Error("Server must be closed before being restared");
@@ -31,12 +64,13 @@ const withHttpServer = (http: any) => (o: any) => {
         });
         server.on(
           "request",
-          (
-            nodeRequest: http.RequestOptions,
-            nodeResponse: http.ServerResponse
-          ) => {
-            console.log("RECEIVED");
-            nodeResponse.end("node response");
+          (_: http.IncomingMessage, nodeResponse: http.ServerResponse) => {
+            const { status, body, headers } = onRequestAsync();
+            nodeResponse.statusCode = status;
+            Object.entries(headers).forEach(([name, value]) =>
+              nodeResponse.setHeader(name, value)
+            );
+            nodeResponse.end(body);
           }
         );
         server.on("listening", resolve);
@@ -55,25 +89,12 @@ const withHttpServer = (http: any) => (o: any) => {
   };
 };
 
-class NullNodeServer extends EventEmitter {
-  constructor() {
-    super();
-  }
-  listen() {
-    setImmediate(() => this.emit("listening"));
-  }
-
-  close() {
-    setImmediate(() => this.emit("close"));
-  }
-}
-
-const nullHttp = {
-  createServer: () => new NullNodeServer(),
-};
+const buildServer = (
+  dependancyhttp: Dependancyhttp,
+  httpServerObj: HttpServerObj
+) => pipe(withHttpServer(dependancyhttp), withConstructor(httpServerObj))({});
 
 export const httpServer = {
-  create: () => pipe(withHttpServer(http), withConstructor(httpServer))({}),
-  createNull: () =>
-    pipe(withHttpServer(nullHttp), withConstructor(httpServer))({}),
+  create: () => buildServer(http, httpServer),
+  createNull: () => buildServer(nullHttp, httpServer),
 };
