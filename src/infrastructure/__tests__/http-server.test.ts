@@ -122,6 +122,31 @@ describe("HTTP Server", () => {
       expect(response).toEqual(expectedResponse);
     });
 
+    it("simulates request", async () => {
+      const expectedResponse = {
+        status: 777,
+        body: "my-body",
+        headers: {
+          header1: "value1",
+          header2: "value2",
+        },
+      };
+
+      const onRequestAsync = () => expectedResponse;
+
+      const server = httpServer.createNull();
+      await startAsync(server, onRequestAsync);
+      const response = await server.simulateRequest();
+      expect(response).toEqual(expectedResponse);
+    });
+
+    it("fails fast when we simulate the request before starting the null server", async () => {
+      const server = httpServer.createNull();
+      expect(() => server.simulateRequest()).rejects.toThrow(
+        "Could not simulate the request before starting the server"
+      );
+    });
+
     it("fails gracefully when request handler throw exception", async () => {
       const onRequestAsync = () => {
         throw new Error("onRequestAsync error");

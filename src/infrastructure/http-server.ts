@@ -59,6 +59,7 @@ const handleRequestAsync = (onRequestAsync: OnRequestAsync) => {
 };
 
 const withHttpServer = (http: Dependancyhttp) => (o: any) => {
+  let fakeOnRequestAsync: undefined | OnRequestAsync;
   let server: http.Server | NullNodeServer | undefined;
   return {
     ...o,
@@ -68,6 +69,7 @@ const withHttpServer = (http: Dependancyhttp) => (o: any) => {
         if (server !== undefined) {
           throw new Error("Server must be closed before being restared");
         }
+        fakeOnRequestAsync = onRequestAsync;
         server = http.createServer();
         server.on("error", (err: any) => {
           reject(
@@ -102,6 +104,14 @@ const withHttpServer = (http: Dependancyhttp) => (o: any) => {
         server.close();
         server = undefined;
       }),
+    simulateRequest: async () => {
+      if (!fakeOnRequestAsync) {
+        throw new Error(
+          "Could not simulate the request before starting the server"
+        );
+      }
+      return handleRequestAsync(fakeOnRequestAsync);
+    },
   };
 };
 
