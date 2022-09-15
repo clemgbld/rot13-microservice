@@ -1,11 +1,15 @@
 import http from "http";
 import { httpServer, HttpServer, OnRequestAsync } from "../http-server";
 
-const PORT = 3011;
+const PORT = 3009;
 
 const startAsync = async (
   server: HttpServer,
-  onRequestAsync: OnRequestAsync = () => ({ status: 200, headers: {} })
+  onRequestAsync: OnRequestAsync = () => ({
+    status: 200,
+    headers: {},
+    body: "",
+  })
 ) => await server.startAsync({ port: PORT, onRequestAsync });
 
 const stopAsync = async (server: HttpServer) => await server.stopAsync();
@@ -28,6 +32,37 @@ const finallyStartAndStopAsync = async (
   }
 };
 
+const getAsync = async ({
+  onRequestAsync,
+}: {
+  onRequestAsync: OnRequestAsync;
+}) =>
+  await finallyStartAndStopAsync(onRequestAsync, async () => {
+    return await new Promise((resolve, reject) => {
+      const request = http.get({ port: PORT });
+      request.on("response", (response) => {
+        let body = "";
+        response.on("data", (data) => {
+          body += data;
+        });
+        response.on("error", (err) => reject(err));
+        response.on("end", () => {
+          const headers = response.headers;
+
+          delete headers.connection;
+          delete headers["content-length"];
+          delete headers.date;
+
+          resolve({
+            status: response.statusCode,
+            body,
+            headers: headers,
+          });
+        });
+      });
+    });
+  });
+
 describe("HTTP Server", () => {
   it("says when server is started", async () => {
     const server = httpServer.create();
@@ -43,7 +78,7 @@ describe("HTTP Server", () => {
 
   it("fails gracefully when server has startup error", async () => {
     await finallyStartAndStopAsync(
-      () => ({ status: 200, headers: {} }),
+      () => ({ status: 200, headers: {}, body: "" }),
       async (_) => {
         const server = httpServer.create();
         await expect(async () => await startAsync(server)).rejects.toThrowError(
@@ -61,7 +96,7 @@ describe("HTTP Server", () => {
 
   it("fails fast when server is started twice", async () => {
     await finallyStartAndStopAsync(
-      () => ({ status: 200, headers: {} }),
+      () => ({ status: 200, headers: {}, body: "" }),
       async (server) => {
         await expect(async () => await startAsync(server)).rejects.toThrow(
           "Server must be closed before being restared"
@@ -72,48 +107,31 @@ describe("HTTP Server", () => {
 
   describe("requests and responses", () => {
     it("runs a function when a request is received and serves the results", async () => {
-      const onRequestAsync = () => ({
+      const expectedResponse = {
         status: 777,
         body: "my-body",
         headers: {
           header1: "value1",
           header2: "value2",
         },
-      });
-      const { body, headers, status } = await finallyStartAndStopAsync(
-        onRequestAsync,
-        async () => {
-          return await new Promise((resolve, reject) => {
-            const request = http.get({ port: PORT });
-            request.on("response", (response) => {
-              response.resume();
-              let body = "";
-              response.on("data", (data) => {
-                body += data;
-              });
-              response.on("error", (err) => reject(err));
-              response.on("end", () => {
-                const headers = response.headers;
+      };
 
-                delete headers.connection;
-                delete headers["content-length"];
-                delete headers.date;
+      const onRequestAsync = () => expectedResponse;
+      const response = await getAsync({ onRequestAsync });
 
-                resolve({
-                  status: response.statusCode,
-                  body,
-                  headers: headers,
-                });
-              });
-            });
-          });
-        }
-      );
-      expect(status).toEqual(777);
-      expect(body).toEqual("my-body");
-      expect(headers).toEqual({
-        header1: "value1",
-        header2: "value2",
+      expect(response).toEqual(expectedResponse);
+    });
+
+    it("fails gracefully when request handler throw exception", async () => {
+      const onRequestAsync = () => {
+        throw new Error("onRequestAsync error");
+      };
+      const response = await getAsync({ onRequestAsync });
+
+      expect(response).toEqual({
+        status: 500,
+        headers: { "content-type": "text/plain; charset=utf-8" },
+        body: "Internal Server Error: request handler threw exception",
       });
     });
   });

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1663049107617" clover="3.2.0">
-  <project timestamp="1663049107617" name="All files">
-    <metrics statements="71" coveredstatements="71" conditionals="11" coveredconditionals="11" methods="37" coveredmethods="37" elements="119" coveredelements="119" complexity="0" loc="71" ncloc="71" packages="4" files="6" classes="6"/>
+<coverage generated="1663144979670" clover="3.2.0">
+  <project timestamp="1663144979671" name="All files">
+    <metrics statements="80" coveredstatements="80" conditionals="11" coveredconditionals="11" methods="41" coveredmethods="40" elements="132" coveredelements="131" complexity="0" loc="80" ncloc="80" packages="4" files="6" classes="6"/>
     <package name="app">
-      <metrics statements="21" coveredstatements="21" conditionals="4" coveredconditionals="4" methods="6" coveredmethods="6"/>
+      <metrics statements="22" coveredstatements="22" conditionals="4" coveredconditionals="4" methods="7" coveredmethods="6"/>
       <file name="app.ts" path="/Users/cgombauld/node-js-tdd/src/app/app.ts">
         <metrics statements="8" coveredstatements="8" conditionals="2" coveredconditionals="2" methods="1" coveredmethods="1"/>
         <line num="1" count="1" type="stmt"/>
@@ -16,20 +16,21 @@
         <line num="15" count="1" type="stmt"/>
       </file>
       <file name="rot13-server.ts" path="/Users/cgombauld/node-js-tdd/src/app/rot13-server.ts">
-        <metrics statements="13" coveredstatements="13" conditionals="2" coveredconditionals="2" methods="5" coveredmethods="5"/>
+        <metrics statements="14" coveredstatements="14" conditionals="2" coveredconditionals="2" methods="6" coveredmethods="5"/>
         <line num="4" count="1" type="stmt"/>
         <line num="5" count="3" type="stmt"/>
         <line num="6" count="1" type="stmt"/>
-        <line num="7" count="1" type="stmt"/>
-        <line num="9" count="3" type="stmt"/>
-        <line num="10" count="3" type="stmt"/>
-        <line num="11" count="3" type="stmt"/>
-        <line num="12" count="3" type="cond" truecount="1" falsecount="0"/>
         <line num="13" count="1" type="stmt"/>
-        <line num="14" count="2" type="cond" truecount="1" falsecount="0"/>
-        <line num="15" count="1" type="stmt"/>
-        <line num="16" count="1" type="stmt"/>
-        <line num="17" count="1" type="stmt"/>
+        <line num="14" count="1" type="stmt"/>
+        <line num="16" count="3" type="stmt"/>
+        <line num="17" count="3" type="stmt"/>
+        <line num="18" count="3" type="stmt"/>
+        <line num="19" count="3" type="cond" truecount="1" falsecount="0"/>
+        <line num="20" count="1" type="stmt"/>
+        <line num="21" count="2" type="cond" truecount="1" falsecount="0"/>
+        <line num="22" count="1" type="stmt"/>
+        <line num="23" count="1" type="stmt"/>
+        <line num="24" count="1" type="stmt"/>
       </file>
     </package>
     <package name="core">
@@ -49,7 +50,7 @@
       </file>
     </package>
     <package name="infrastructure">
-      <metrics statements="39" coveredstatements="39" conditionals="3" coveredconditionals="3" methods="24" coveredmethods="24"/>
+      <metrics statements="47" coveredstatements="47" conditionals="3" coveredconditionals="3" methods="27" coveredmethods="27"/>
       <file name="command-line.ts" path="/Users/cgombauld/node-js-tdd/src/infrastructure/command-line.ts">
         <metrics statements="8" coveredstatements="8" conditionals="1" coveredconditionals="1" methods="6" coveredmethods="6"/>
         <line num="14" count="10" type="cond" truecount="1" falsecount="0"/>
@@ -62,45 +63,53 @@
         <line num="34" count="8" type="stmt"/>
       </file>
       <file name="http-server.ts" path="/Users/cgombauld/node-js-tdd/src/infrastructure/http-server.ts">
-        <metrics statements="31" coveredstatements="31" conditionals="2" coveredconditionals="2" methods="18" coveredmethods="18"/>
+        <metrics statements="39" coveredstatements="39" conditionals="2" coveredconditionals="2" methods="21" coveredmethods="21"/>
         <line num="1" count="2" type="stmt"/>
         <line num="2" count="2" type="stmt"/>
         <line num="3" count="2" type="stmt"/>
         <line num="4" count="2" type="stmt"/>
-        <line num="16" count="11" type="stmt"/>
-        <line num="18" count="11" type="stmt"/>
-        <line num="20" count="4" type="stmt"/>
-        <line num="21" count="10" type="stmt"/>
-        <line num="22" count="10" type="stmt"/>
-        <line num="23" count="10" type="cond" truecount="1" falsecount="0"/>
-        <line num="24" count="1" type="stmt"/>
-        <line num="26" count="9" type="stmt"/>
-        <line num="27" count="9" type="stmt"/>
-        <line num="28" count="1" type="stmt"/>
-        <line num="32" count="9" type="stmt"/>
-        <line num="33" count="9" type="stmt"/>
-        <line num="35" count="7" type="stmt"/>
-        <line num="36" count="7" type="stmt"/>
-        <line num="37" count="7" type="cond" truecount="1" falsecount="0"/>
-        <line num="38" count="1" type="stmt"/>
-        <line num="41" count="6" type="stmt"/>
-        <line num="42" count="6" type="stmt"/>
-        <line num="43" count="6" type="stmt"/>
-        <line num="50" count="3" type="stmt"/>
-        <line num="53" count="3" type="stmt"/>
+        <line num="8" count="3" type="stmt"/>
+        <line num="11" count="3" type="stmt"/>
+        <line num="15" count="1" type="stmt"/>
+        <line num="19" count="2" type="stmt"/>
+        <line num="20" count="3" type="stmt"/>
+        <line num="49" count="12" type="stmt"/>
+        <line num="51" count="12" type="stmt"/>
+        <line num="53" count="4" type="stmt"/>
+        <line num="54" count="11" type="stmt"/>
+        <line num="55" count="11" type="stmt"/>
+        <line num="56" count="11" type="cond" truecount="1" falsecount="0"/>
         <line num="57" count="1" type="stmt"/>
-        <line num="61" count="2" type="stmt"/>
-        <line num="62" count="3" type="stmt"/>
-        <line num="65" count="2" type="stmt"/>
-        <line num="66" count="6" type="stmt"/>
-        <line num="68" count="5" type="stmt"/>
+        <line num="59" count="10" type="stmt"/>
+        <line num="60" count="10" type="stmt"/>
+        <line num="61" count="1" type="stmt"/>
+        <line num="65" count="10" type="stmt"/>
+        <line num="71" count="1" type="stmt"/>
+        <line num="72" count="1" type="stmt"/>
+        <line num="73" count="1" type="stmt"/>
+        <line num="74" count="2" type="stmt"/>
+        <line num="76" count="1" type="stmt"/>
+        <line num="79" count="10" type="stmt"/>
+        <line num="80" count="10" type="stmt"/>
+        <line num="82" count="8" type="stmt"/>
+        <line num="83" count="8" type="stmt"/>
+        <line num="84" count="8" type="cond" truecount="1" falsecount="0"/>
+        <line num="85" count="1" type="stmt"/>
+        <line num="88" count="7" type="stmt"/>
+        <line num="89" count="7" type="stmt"/>
+        <line num="90" count="7" type="stmt"/>
+        <line num="95" count="2" type="stmt"/>
+        <line num="98" count="12" type="stmt"/>
+        <line num="100" count="2" type="stmt"/>
+        <line num="101" count="7" type="stmt"/>
+        <line num="102" count="5" type="stmt"/>
       </file>
     </package>
     <package name="utils">
       <metrics statements="1" coveredstatements="1" conditionals="0" coveredconditionals="0" methods="2" coveredmethods="2"/>
       <file name="withConstructor.ts" path="/Users/cgombauld/node-js-tdd/src/utils/withConstructor.ts">
         <metrics statements="1" coveredstatements="1" conditionals="0" coveredconditionals="0" methods="2" coveredmethods="2"/>
-        <line num="1" count="11" type="stmt"/>
+        <line num="1" count="12" type="stmt"/>
       </file>
     </package>
   </project>

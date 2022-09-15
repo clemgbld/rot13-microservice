@@ -3,7 +3,7 @@ import { HttpServer } from "../infrastructure/http-server";
 
 export const app = (commandLine: CommandLine, httpServer: HttpServer) => {
   const runServerAsync = async (server: HttpServer, port: number) => {
-    const onRequestAsync = () => ({ status: 200, headers: {} });
+    const onRequestAsync = () => ({ status: 200, headers: {}, body: "" });
     // const onRequestAsync = (req, res) => ({
     //   statusCode: 501,
     //   headers: { "Content-Type": "text/plain; charset=utf-8" },

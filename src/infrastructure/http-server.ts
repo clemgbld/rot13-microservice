@@ -22,7 +22,7 @@ const nullHttp = {
 
 interface Response {
   status: number;
-  body?: string;
+  body: string;
   headers: Record<string, string>;
 }
 
@@ -46,6 +46,18 @@ interface HttpServerObj {
   createNull: () => any;
 }
 
+const handleRequestAsync = (onRequestAsync: OnRequestAsync) => {
+  try {
+    return onRequestAsync();
+  } catch (err) {
+    return {
+      status: 500,
+      headers: { "content-type": "text/plain; charset=utf-8" },
+      body: "Internal Server Error: request handler threw exception",
+    };
+  }
+};
+
 const withHttpServer = (http: Dependancyhttp) => (o: any) => {
   let server: http.Server | NullNodeServer | undefined;
   return {
@@ -68,7 +80,8 @@ const withHttpServer = (http: Dependancyhttp) => (o: any) => {
             nodeRequest: http.IncomingMessage,
             nodeResponse: http.ServerResponse
           ) => {
-            const { status, body, headers } = onRequestAsync();
+            const { status, body, headers } =
+              handleRequestAsync(onRequestAsync);
             nodeResponse.statusCode = status;
             Object.entries(headers).forEach(([name, value]) =>
               nodeResponse.setHeader(name, value)
