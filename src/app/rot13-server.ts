@@ -3,13 +3,15 @@ import { HttpServer } from "../infrastructure/http-server";
 
 export const app = (commandLine: CommandLine, httpServer: HttpServer) => {
   const runServerAsync = async (server: HttpServer, port: number) => {
-    const onRequestAsync = () => ({ status: 200, headers: {}, body: "" });
-    // const onRequestAsync = (req, res) => ({
-    //   statusCode: 501,
-    //   headers: { "Content-Type": "text/plain; charset=utf-8" },
-    //   body: "not yet implented",
-    // });
-    // await server.startAsync({ port,onRequestAsync });
+    const onRequestAsync = () => {
+      commandLine.writeOutpout("Recevied request");
+      return {
+        status: 501,
+        headers: { "Content-Type": "text/plain; charset=utf-8" },
+        body: "Not yet implented",
+      };
+    };
+
     await server.startAsync({ port, onRequestAsync });
     commandLine.writeOutpout(`Server started on port ${port}`);
   };
