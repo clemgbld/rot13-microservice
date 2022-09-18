@@ -1,20 +1,20 @@
-import http from "http";
 import { httpServer } from "../http-server";
 import { requestAsync } from "../../test-helper/helper";
-
-const PORT = 3127;
+import { HttpRequest } from "../http-request";
+const PORT = 3157;
 
 interface Options {
   url?: string;
   method?: string;
   headers?: Record<string, string>;
+  body?: string[];
 }
 
-type ExpectFnAsync = (request: http.IncomingMessage) => void;
+type ExpectFnAsync = (request: HttpRequest) => void;
 
 const createRequestAsync = (options: Options, expectFnAsync: ExpectFnAsync) =>
   new Promise(async (resolve, reject) => {
-    const onRequestAsync = async (request: http.IncomingMessage) => {
+    const onRequestAsync = async (request: HttpRequest) => {
       try {
         expectFnAsync(request);
         return { status: 200, headers: {}, body: "" };
@@ -43,7 +43,7 @@ describe("HTTP Request", () => {
       {
         url: "/my-url",
       },
-      (request: http.IncomingMessage) => expect(request.url).toBe("/my-url")
+      (request: HttpRequest) => expect(request.url).toBe("/my-url")
     );
   });
 
@@ -52,7 +52,7 @@ describe("HTTP Request", () => {
       {
         method: "pOst",
       },
-      (request: http.IncomingMessage) => expect(request.method).toBe("POST")
+      (request: HttpRequest) => expect(request.method).toBe("POST")
     );
   });
 
@@ -62,7 +62,7 @@ describe("HTTP Request", () => {
       myHEader2: "myHeader2",
     };
 
-    await createRequestAsync({ headers }, (request: http.IncomingMessage) => {
+    await createRequestAsync({ headers }, (request: HttpRequest) => {
       expect(request.headers).toEqual({
         myheader1: "myHeader1",
         myheader2: "myHeader2",
@@ -78,7 +78,7 @@ describe("HTTP Request", () => {
       header: "value",
     };
 
-    await createRequestAsync({ headers }, (request: http.IncomingMessage) => {
+    await createRequestAsync({ headers }, (request: HttpRequest) => {
       try {
         delete request.headers.header;
       } catch (err: any) {
@@ -87,5 +87,32 @@ describe("HTTP Request", () => {
         );
       }
     });
+  });
+
+  it("provides body", async () => {
+    const body = ["chunk1", "chunk2"];
+
+    await createRequestAsync(
+      {
+        body,
+      },
+      async (request: HttpRequest) =>
+        expect(await request.readBodyAsync()).toBe("chunk1chunk2")
+    );
+  });
+
+  it("fails fast when the body is read twice", async () => {
+    const body = ["chunk1", "chunk2"];
+    await createRequestAsync(
+      {
+        body,
+      },
+      async (request: HttpRequest) => {
+        await request.readBodyAsync();
+        await expect(
+          async () => await request.readBodyAsync()
+        ).rejects.toThrowError("Cannot read the body twice");
+      }
+    );
   });
 });
