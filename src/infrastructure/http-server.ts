@@ -1,7 +1,7 @@
 import EventEmitter from "events";
 import http from "http";
-import { pipe } from "ramda";
-import { withConstructor } from "../utils/withConstructor";
+import { httpRequest } from "./http-request";
+import { buildInfrastructure } from "./utils/buildInfrastructure";
 
 class NullNodeServer extends EventEmitter {
   constructor() {
@@ -26,7 +26,7 @@ interface Response {
   headers: Record<string, string>;
 }
 
-export type OnRequestAsync = () => Response;
+export type OnRequestAsync = (request: any) => Response;
 
 interface StarAsync {
   port: number;
@@ -39,16 +39,14 @@ export interface HttpServer {
   stopAsync: () => Promise<unknown>;
 }
 
-type Dependancyhttp = typeof http | typeof nullHttp;
+export type DependancyHttp = typeof http | typeof nullHttp;
 
-interface HttpServerObj {
-  create: () => any;
-  createNull: () => any;
-}
-
-const handleRequestAsync = (onRequestAsync: OnRequestAsync) => {
+const handleRequestAsync = (
+  request: http.IncomingMessage | null | {} | undefined,
+  onRequestAsync: OnRequestAsync
+) => {
   try {
-    return onRequestAsync();
+    return onRequestAsync(request);
   } catch (err) {
     return {
       status: 500,
@@ -58,7 +56,7 @@ const handleRequestAsync = (onRequestAsync: OnRequestAsync) => {
   }
 };
 
-const withHttpServer = (http: Dependancyhttp) => (o: any) => {
+const withHttpServer = (http: DependancyHttp) => (o: any) => {
   let fakeOnRequestAsync: undefined | OnRequestAsync;
   let server: http.Server | NullNodeServer | undefined;
   return {
@@ -82,13 +80,15 @@ const withHttpServer = (http: Dependancyhttp) => (o: any) => {
             nodeRequest: http.IncomingMessage,
             nodeResponse: http.ServerResponse
           ) => {
-            const { status, body, headers } =
-              handleRequestAsync(onRequestAsync);
-            nodeResponse.statusCode = status;
-            Object.entries(headers).forEach(([name, value]) =>
+            const { status, body, headers } = handleRequestAsync(
+              httpRequest.create(nodeRequest),
+              onRequestAsync
+            );
+            nodeResponse.statusCode = status || 200;
+            Object.entries(headers || {}).forEach(([name, value]) =>
               nodeResponse.setHeader(name, value)
             );
-            nodeResponse.end(body);
+            nodeResponse.end(body || "");
           }
         );
         server.on("listening", resolve);
@@ -110,17 +110,22 @@ const withHttpServer = (http: Dependancyhttp) => (o: any) => {
           "Could not simulate the request before starting the server"
         );
       }
-      return handleRequestAsync(fakeOnRequestAsync);
+      return handleRequestAsync({}, fakeOnRequestAsync);
     },
   };
 };
 
-const buildServer = (
-  dependancyhttp: Dependancyhttp,
-  httpServerObj: HttpServerObj
-) => pipe(withHttpServer(dependancyhttp), withConstructor(httpServerObj))({});
-
 export const httpServer = {
-  create: () => buildServer(http, httpServer),
-  createNull: () => buildServer(nullHttp, httpServer),
+  create: () =>
+    buildInfrastructure({
+      dependancy: http,
+      infrastructureObj: httpServer,
+      withMixin: withHttpServer,
+    }),
+  createNull: () =>
+    buildInfrastructure({
+      dependancy: nullHttp,
+      infrastructureObj: httpServer,
+      withMixin: withHttpServer,
+    }),
 };

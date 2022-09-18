@@ -1,7 +1,7 @@
 import http from "http";
 import { httpServer, HttpServer, OnRequestAsync } from "../http-server";
 
-const PORT = 3009;
+const PORT = 5011;
 
 const startAsync = async (
   server: HttpServer,

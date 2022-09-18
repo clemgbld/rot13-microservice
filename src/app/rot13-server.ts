@@ -3,6 +3,18 @@ import { HttpServer } from "../infrastructure/http-server";
 
 export const app = (commandLine: CommandLine, httpServer: HttpServer) => {
   const runServerAsync = async (server: HttpServer, port: number) => {
+    // const onRequestAsync = async (request) => {
+
+    // const input = await request.readBodyAsync()
+    // const output = rot13(input)
+
+    //   return {
+    //     status: 200,
+    //     headers: { "Content-Type": "text/plain; charset=utf-8" },
+    //     body: output,
+    //   };
+    // };
+
     const onRequestAsync = () => {
       commandLine.writeOutpout("Recevied request");
       return {
