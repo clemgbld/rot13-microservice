@@ -45,7 +45,7 @@ const withHttpRequest =
     };
   };
 
-interface ConfigurableRequest {
+export interface ConfigurableRequest {
   url?: string;
   method?: string;
   headers?: Record<string, string>;

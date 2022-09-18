@@ -1,7 +1,7 @@
 import http from "http";
 import { httpServer, HttpServer, OnRequestAsync } from "../http-server";
-
-const PORT = 5011;
+import { DependancyHttpRequest, httpRequest } from "../http-request";
+const PORT = 5536;
 
 const startAsync = async (
   server: HttpServer,
@@ -32,11 +32,7 @@ const finallyStartAndStopAsync = async (
   }
 };
 
-const getAsync = async ({
-  onRequestAsync,
-}: {
-  onRequestAsync: OnRequestAsync;
-}) =>
+const getAsync = async ({ onRequestAsync }: { onRequestAsync: any }) =>
   await finallyStartAndStopAsync(onRequestAsync, async () => {
     return await new Promise((resolve, reject) => {
       const request = http.get({ port: PORT });
@@ -116,7 +112,9 @@ describe("HTTP Server", () => {
         },
       };
 
-      const onRequestAsync = () => expectedResponse;
+      const onRequestAsync = (request: DependancyHttpRequest) => {
+        return expectedResponse;
+      };
       const response = await getAsync({ onRequestAsync });
 
       expect(response).toEqual(expectedResponse);
@@ -132,12 +130,17 @@ describe("HTTP Server", () => {
         },
       };
 
-      const onRequestAsync = () => expectedResponse;
-
+      const expectedRequest = httpRequest.createNull();
+      var actualRequest: DependancyHttpRequest | undefined;
+      const onRequestAsync = (request: DependancyHttpRequest) => {
+        actualRequest = request;
+        return expectedResponse;
+      };
       const server = httpServer.createNull();
       await startAsync(server, onRequestAsync);
-      const response = await server.simulateRequest();
+      const response = await server.simulateRequest(expectedRequest);
       expect(response).toEqual(expectedResponse);
+      expect(actualRequest).toEqual(expectedRequest);
     });
 
     it("fails fast when we simulate the request before starting the null server", async () => {

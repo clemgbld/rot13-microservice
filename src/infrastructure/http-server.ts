@@ -2,6 +2,7 @@ import EventEmitter from "events";
 import http from "http";
 import { httpRequest } from "./http-request";
 import { buildInfrastructure } from "./utils/buildInfrastructure";
+import { DependancyHttpRequest } from "./http-request";
 
 class NullNodeServer extends EventEmitter {
   constructor() {
@@ -20,13 +21,13 @@ const nullHttp = {
   createServer: () => new NullNodeServer(),
 };
 
-interface Response {
+export interface Response {
   status: number;
-  body: string;
-  headers: Record<string, string>;
+  body: string | string[] | undefined;
+  headers: Record<string, string> | http.IncomingHttpHeaders;
 }
 
-export type OnRequestAsync = (request: any) => Response;
+export type OnRequestAsync = (request: DependancyHttpRequest) => Response;
 
 interface StarAsync {
   port: number;
@@ -42,7 +43,7 @@ export interface HttpServer {
 export type DependancyHttp = typeof http | typeof nullHttp;
 
 const handleRequestAsync = (
-  request: http.IncomingMessage | null | {} | undefined,
+  request: DependancyHttpRequest,
   onRequestAsync: OnRequestAsync
 ) => {
   try {
@@ -80,15 +81,19 @@ const withHttpServer = (http: DependancyHttp) => (o: any) => {
             nodeRequest: http.IncomingMessage,
             nodeResponse: http.ServerResponse
           ) => {
-            const { status, body, headers } = handleRequestAsync(
+            const {
+              status = 501,
+              body = "",
+              headers = {},
+            } = handleRequestAsync(
               httpRequest.create(nodeRequest),
               onRequestAsync
             );
-            nodeResponse.statusCode = status || 200;
-            Object.entries(headers || {}).forEach(([name, value]) =>
+            nodeResponse.statusCode = status;
+            Object.entries(headers).forEach(([name, value = ""]) =>
               nodeResponse.setHeader(name, value)
             );
-            nodeResponse.end(body || "");
+            nodeResponse.end(body);
           }
         );
         server.on("listening", resolve);
@@ -104,13 +109,15 @@ const withHttpServer = (http: DependancyHttp) => (o: any) => {
         server.close();
         server = undefined;
       }),
-    simulateRequest: async () => {
+    simulateRequest: async (
+      request: DependancyHttpRequest = httpRequest.createNull()
+    ) => {
       if (!fakeOnRequestAsync) {
         throw new Error(
           "Could not simulate the request before starting the server"
         );
       }
-      return handleRequestAsync({}, fakeOnRequestAsync);
+      return handleRequestAsync(request, fakeOnRequestAsync);
     },
   };
 };
