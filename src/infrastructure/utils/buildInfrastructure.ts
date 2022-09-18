@@ -2,13 +2,14 @@ import http from "http";
 import { pipe } from "ramda";
 import { withConstructor } from "../../utils/withConstructor";
 import { DependancyHttp } from "../http-server";
+import { DependancyHttpRequest } from "../http-request";
 
 interface InfrastructureObj {
   create: (request?: any) => any;
-  createNull?: () => any;
+  createNull?: (request?: any) => any;
 }
 interface BuildInfrastructure {
-  dependancy: DependancyHttp | http.IncomingMessage;
+  dependancy: DependancyHttp | DependancyHttpRequest;
   infrastructureObj: InfrastructureObj;
   withMixin: any;
 }
