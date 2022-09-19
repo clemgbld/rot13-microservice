@@ -4,6 +4,19 @@ import { httpRequest } from "../../infrastructure/http-request";
 import { rot13 } from "../../core/rot13";
 import { app } from "../rot13-server";
 
+interface Response {
+  status: number;
+  headers: Record<string, string>;
+  body: string;
+}
+
+interface SimulateRequest {
+  url?: string;
+  body?: string;
+  method?: string;
+  headers?: Record<string, string>;
+}
+
 const startServerAsync = async (args: string[] = ["5000"]) => {
   const nullCommandLine = commandLine(nullProcess(args));
   const nullHttpServer = httpServer.createNull();
@@ -12,6 +25,43 @@ const startServerAsync = async (args: string[] = ["5000"]) => {
 
   return { nullCommandLine, nullHttpServer };
 };
+
+const VALID_URL = "rot-13/transform";
+const VALID_METHOD = "POST";
+
+const simulateRequestAsync = async ({
+  url = VALID_URL,
+  body = "irelevant",
+  method = VALID_METHOD,
+  headers = { "Content-Type": "application/json;charset=utf-8" },
+}: SimulateRequest) => {
+  const { nullCommandLine, nullHttpServer } = await startServerAsync();
+
+  const request = httpRequest.createNull({
+    url,
+    body,
+    method,
+    headers,
+  });
+  const response = await nullHttpServer.simulateRequest(request);
+
+  return { nullCommandLine, response };
+};
+
+const expectResponseToEqual = ({
+  status,
+  value,
+  response,
+}: {
+  status: number;
+  value: Record<string, string>;
+  response: Response;
+}) =>
+  expect(response).toEqual({
+    status,
+    headers: { "Content-Type": "application/json;charset=utf-8" },
+    body: JSON.stringify(value),
+  });
 
 describe("ROT13-Server", () => {
   it("starts the server", async () => {
@@ -24,15 +74,71 @@ describe("ROT13-Server", () => {
     );
   });
 
-  it("transforms request", async () => {
-    const { nullCommandLine, nullHttpServer } = await startServerAsync();
-    const request = httpRequest.createNull({ body: "hello" });
-    const response = await nullHttpServer.simulateRequest(request);
+  it("logs 'Recieved request' to the command-line when request is received", async () => {
+    const { nullCommandLine } = await simulateRequestAsync({});
     expect(nullCommandLine.getLastOutpout()).toBe("Recevied request\n");
-    expect(response).toEqual({
+  });
+
+  it("transforms request", async () => {
+    const { response } = await simulateRequestAsync({
+      url: VALID_URL,
+      body: "hello",
+    });
+
+    expectResponseToEqual({
+      response,
       status: 200,
-      headers: { "Content-Type": "text/plain; charset=utf-8" },
-      body: rot13("hello"),
+      value: { transformed: rot13("hello") },
+    });
+  });
+
+  it("returns not found when the url is nor correct", async () => {
+    const { response } = await simulateRequestAsync({
+      url: "/no-such-url",
+    });
+
+    expectResponseToEqual({
+      response,
+      status: 404,
+      value: { error: "Not found" },
+    });
+  });
+
+  it("should give method not allowed when the method is not POST", async () => {
+    const { response } = await simulateRequestAsync({
+      method: "GET",
+    });
+
+    expectResponseToEqual({
+      response,
+      status: 405,
+      value: { error: "Method not allowed" },
+    });
+  });
+
+  it("should give bad request when content-type is not Json", async () => {
+    const headers = { "Content-Type": "text/plain" };
+    const { response } = await simulateRequestAsync({
+      headers,
+    });
+
+    expectResponseToEqual({
+      response,
+      status: 405,
+      value: { error: "Invalid content type" },
+    });
+  });
+
+  it("should give bad request when there is no headers", async () => {
+    const headers = {};
+    const { response } = await simulateRequestAsync({
+      headers,
+    });
+
+    expectResponseToEqual({
+      response,
+      status: 405,
+      value: { error: "Invalid content type" },
     });
   });
 
