@@ -2,7 +2,7 @@ import EventEmitter from "events";
 import http from "http";
 import { httpRequest } from "./http-request";
 import { buildInfrastructure } from "./utils/buildInfrastructure";
-import { DependancyHttpRequest } from "./http-request";
+import { RequestAdapter } from "./http-request";
 
 class NullNodeServer extends EventEmitter {
   constructor() {
@@ -23,11 +23,11 @@ const nullHttp = {
 
 export interface Response {
   status: number;
-  body: string | string[] | undefined;
-  headers: Record<string, string> | http.IncomingHttpHeaders;
+  body: string;
+  headers: Record<string, string>;
 }
 
-export type OnRequestAsync = (request: DependancyHttpRequest) => Response;
+export type OnRequestAsync = (request: RequestAdapter) => Promise<Response>;
 
 interface StarAsync {
   port: number;
@@ -42,8 +42,8 @@ export interface HttpServer {
 
 export type DependancyHttp = typeof http | typeof nullHttp;
 
-const handleRequestAsync = (
-  request: DependancyHttpRequest,
+const handleRequestAsync = async (
+  request: RequestAdapter,
   onRequestAsync: OnRequestAsync
 ) => {
   try {
@@ -77,7 +77,7 @@ const withHttpServer = (http: DependancyHttp) => (o: any) => {
         });
         server.on(
           "request",
-          (
+          async (
             nodeRequest: http.IncomingMessage,
             nodeResponse: http.ServerResponse
           ) => {
@@ -85,7 +85,7 @@ const withHttpServer = (http: DependancyHttp) => (o: any) => {
               status = 501,
               body = "",
               headers = {},
-            } = handleRequestAsync(
+            } = await handleRequestAsync(
               httpRequest.create(nodeRequest),
               onRequestAsync
             );
@@ -110,7 +110,7 @@ const withHttpServer = (http: DependancyHttp) => (o: any) => {
         server = undefined;
       }),
     simulateRequest: async (
-      request: DependancyHttpRequest = httpRequest.createNull()
+      request: RequestAdapter = httpRequest.createNull()
     ) => {
       if (!fakeOnRequestAsync) {
         throw new Error(

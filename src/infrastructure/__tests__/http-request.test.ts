@@ -1,7 +1,7 @@
 import { httpServer } from "../http-server";
 import { requestAsync } from "../../test-helper/helper";
 import { httpRequest, HttpRequest } from "../http-request";
-const PORT = 3153;
+const PORT = 3546;
 
 interface Options {
   url?: string;

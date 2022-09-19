@@ -1,11 +1,15 @@
 import http from "http";
 import { httpServer, HttpServer, OnRequestAsync } from "../http-server";
-import { DependancyHttpRequest, httpRequest } from "../http-request";
-const PORT = 5536;
+import {
+  DependancyHttpRequest,
+  httpRequest,
+  RequestAdapter,
+} from "../http-request";
+const PORT = 5537;
 
 const startAsync = async (
   server: HttpServer,
-  onRequestAsync: OnRequestAsync = () => ({
+  onRequestAsync: OnRequestAsync = async () => ({
     status: 200,
     headers: {},
     body: "",
@@ -74,7 +78,7 @@ describe("HTTP Server", () => {
 
   it("fails gracefully when server has startup error", async () => {
     await finallyStartAndStopAsync(
-      () => ({ status: 200, headers: {}, body: "" }),
+      async () => ({ status: 200, headers: {}, body: "" }),
       async (_) => {
         const server = httpServer.create();
         await expect(async () => await startAsync(server)).rejects.toThrowError(
@@ -92,7 +96,7 @@ describe("HTTP Server", () => {
 
   it("fails fast when server is started twice", async () => {
     await finallyStartAndStopAsync(
-      () => ({ status: 200, headers: {}, body: "" }),
+      async () => ({ status: 200, headers: {}, body: "" }),
       async (server) => {
         await expect(async () => await startAsync(server)).rejects.toThrow(
           "Server must be closed before being restared"
@@ -131,8 +135,8 @@ describe("HTTP Server", () => {
       };
 
       const expectedRequest = httpRequest.createNull();
-      var actualRequest: DependancyHttpRequest | undefined;
-      const onRequestAsync = (request: DependancyHttpRequest) => {
+      var actualRequest: RequestAdapter | undefined;
+      const onRequestAsync = async (request: RequestAdapter) => {
         actualRequest = request;
         return expectedResponse;
       };

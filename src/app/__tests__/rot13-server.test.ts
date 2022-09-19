@@ -1,5 +1,7 @@
 import { commandLine, nullProcess } from "../../infrastructure/command-line";
 import { httpServer } from "../../infrastructure/http-server";
+import { httpRequest } from "../../infrastructure/http-request";
+import { rot13 } from "../../core/rot13";
 import { app } from "../rot13-server";
 
 const startServerAsync = async (args: string[] = ["5000"]) => {
@@ -22,14 +24,15 @@ describe("ROT13-Server", () => {
     );
   });
 
-  it("responds to request with a placeholder", async () => {
+  it("transforms request", async () => {
     const { nullCommandLine, nullHttpServer } = await startServerAsync();
-    const response = await nullHttpServer.simulateRequest();
+    const request = httpRequest.createNull({ body: "hello" });
+    const response = await nullHttpServer.simulateRequest(request);
     expect(nullCommandLine.getLastOutpout()).toBe("Recevied request\n");
     expect(response).toEqual({
-      status: 501,
+      status: 200,
       headers: { "Content-Type": "text/plain; charset=utf-8" },
-      body: "Not yet implented",
+      body: rot13("hello"),
     });
   });
 

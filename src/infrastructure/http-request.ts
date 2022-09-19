@@ -17,6 +17,13 @@ interface Request {
   body: string;
 }
 
+export interface RequestAdapter {
+  url: string | undefined;
+  method: string | undefined;
+  headers: Readonly<Record<string, string> | http.IncomingHttpHeaders>;
+  readBodyAsync: () => Promise<string>;
+}
+
 interface NullHttpRequest extends EventEmitter, Request {}
 
 export type DependancyHttpRequest = http.IncomingMessage | NullHttpRequest;

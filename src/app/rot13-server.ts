@@ -1,26 +1,20 @@
+import { rot13 } from "../core/rot13";
 import { CommandLine } from "../infrastructure/command-line";
-import { HttpServer } from "../infrastructure/http-server";
+import { RequestAdapter } from "../infrastructure/http-request";
+import { HttpServer, Response } from "../infrastructure/http-server";
 
 export const app = (commandLine: CommandLine, httpServer: HttpServer) => {
   const runServerAsync = async (server: HttpServer, port: number) => {
-    // const onRequestAsync = async (request) => {
+    const onRequestAsync = async (request: RequestAdapter) => {
+      const input = await request.readBodyAsync();
+      const output = rot13(input);
 
-    // const input = await request.readBodyAsync()
-    // const output = rot13(input)
-
-    //   return {
-    //     status: 200,
-    //     headers: { "Content-Type": "text/plain; charset=utf-8" },
-    //     body: output,
-    //   };
-    // };
-
-    const onRequestAsync = () => {
       commandLine.writeOutpout("Recevied request");
+
       return {
-        status: 501,
+        status: 200,
         headers: { "Content-Type": "text/plain; charset=utf-8" },
-        body: "Not yet implented",
+        body: output,
       };
     };
 
