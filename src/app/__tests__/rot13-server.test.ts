@@ -12,7 +12,7 @@ interface Response {
 
 interface SimulateRequest {
   url?: string;
-  body?: string;
+  body?: string | Record<string, string>;
   method?: string;
   headers?: Record<string, string>;
 }
@@ -31,7 +31,7 @@ const VALID_METHOD = "POST";
 
 const simulateRequestAsync = async ({
   url = VALID_URL,
-  body = "irelevant",
+  body = { text: "" },
   method = VALID_METHOD,
   headers = { "Content-Type": "application/json;charset=utf-8" },
 }: SimulateRequest) => {
@@ -39,7 +39,7 @@ const simulateRequestAsync = async ({
 
   const request = httpRequest.createNull({
     url,
-    body,
+    body: typeof body === "object" ? JSON.stringify(body) : body,
     method,
     headers,
   });
@@ -54,7 +54,7 @@ const expectResponseToEqual = ({
   response,
 }: {
   status: number;
-  value: Record<string, string>;
+  value: Record<string, string> | string;
   response: Response;
 }) =>
   expect(response).toEqual({
@@ -82,7 +82,7 @@ describe("ROT13-Server", () => {
   it("transforms request", async () => {
     const { response } = await simulateRequestAsync({
       url: VALID_URL,
-      body: "hello",
+      body: { text: "hello" },
     });
 
     expectResponseToEqual({
@@ -155,6 +155,17 @@ describe("ROT13-Server", () => {
       expect(nullCommandLine.getLastOutpout()).toBe(
         "please provide at most one argument\n"
       );
+    });
+  });
+});
+
+describe("parsing", () => {
+  it("should give bad request when json fails to parse", async () => {
+    const { response } = await simulateRequestAsync({ body: "not-json" });
+    expect(response).toEqual({
+      status: 400,
+      headers: { "Content-Type": "application/json;charset=utf-8" },
+      body: '{"error":"Unexpected token o in JSON at position 1"}',
     });
   });
 });

@@ -28,3 +28,6 @@ export const validResponse = (outpout: string) =>
 
 export const invalidContentType = () =>
   errorResponse({ status: 405, error: "Invalid content type" });
+
+export const badRequest = (error: string) =>
+  errorResponse({ status: 400, error });

@@ -14,7 +14,7 @@ interface Request {
   headers: Record<string, string>;
   on: (event: string, fn: any) => this;
   readableEnded: boolean;
-  body: string;
+  body: string | Record<string, string>;
 }
 
 export interface RequestAdapter {
@@ -56,7 +56,7 @@ export interface ConfigurableRequest {
   url?: string;
   method?: string;
   headers?: Record<string, string>;
-  body?: string;
+  body?: string | Record<string, string>;
 }
 
 const normalizeHeaders = (headers: Record<string, string>) =>
