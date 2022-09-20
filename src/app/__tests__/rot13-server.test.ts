@@ -26,7 +26,7 @@ const startServerAsync = async (args: string[] = ["5000"]) => {
   return { nullCommandLine, nullHttpServer };
 };
 
-const VALID_URL = "rot-13/transform";
+const VALID_URL = "/rot-13/transform";
 const VALID_METHOD = "POST";
 
 const simulateRequestAsync = async ({
@@ -142,6 +142,30 @@ describe("ROT13-Server", () => {
     });
   });
 
+  it("should give bad request when json does not have text field", async () => {
+    const { response } = await simulateRequestAsync({
+      body: { notText: "" },
+    });
+
+    expectResponseToEqual({
+      response,
+      status: 400,
+      value: { error: "Json must have text field" },
+    });
+  });
+
+  it("ignores extranous fields", async () => {
+    const body = { wrongField: "foo", text: "right field" };
+    const { response } = await simulateRequestAsync({
+      body,
+    });
+    expectResponseToEqual({
+      response,
+      status: 200,
+      value: { transformed: rot13("right field") },
+    });
+  });
+
   describe("Command-line processing", () => {
     it("should tell the user to provide an argument when the user do not", async () => {
       const { nullCommandLine } = await startServerAsync([]);
@@ -150,7 +174,7 @@ describe("ROT13-Server", () => {
       );
     });
 
-    it("should tell the user when he provide tto much argument", async () => {
+    it("should tell the user when he provide too much argument", async () => {
       const { nullCommandLine } = await startServerAsync(["one", "two"]);
       expect(nullCommandLine.getLastOutpout()).toBe(
         "please provide at most one argument\n"
