@@ -13,10 +13,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.httpRequest = void 0;
+const ramda_1 = require("ramda");
 const buildInfrastructure_1 = require("./utils/buildInfrastructure");
 const events_1 = __importDefault(require("events"));
 const withHttpRequest = (dependencyHttpRequest) => (o) => {
-    return Object.assign(Object.assign({}, o), { url: dependencyHttpRequest.url, method: dependencyHttpRequest.method, headers: Object.freeze(dependencyHttpRequest.headers), readBodyAsync: () => __awaiter(void 0, void 0, void 0, function* () {
+    let headers = Object.freeze(dependencyHttpRequest.headers);
+    const ignoreParameters = (contentType) => contentType === null || contentType === void 0 ? void 0 : contentType.split(";")[0];
+    const normalizeContentType = (contentType) => contentType === null || contentType === void 0 ? void 0 : contentType.toLowerCase().trim();
+    const normalizeContentTypeFromHeaders = (0, ramda_1.pipe)(ignoreParameters, normalizeContentType);
+    return Object.assign(Object.assign({}, o), { url: dependencyHttpRequest.url, method: dependencyHttpRequest.method, headers, readBodyAsync: () => __awaiter(void 0, void 0, void 0, function* () {
             return yield new Promise((resolve, reject) => {
                 if (dependencyHttpRequest.readableEnded) {
                     throw new Error("Cannot read the body twice");
@@ -30,7 +35,8 @@ const withHttpRequest = (dependencyHttpRequest) => (o) => {
                     resolve(body);
                 });
             });
-        }) });
+        }), hasContentType: (contentType) => normalizeContentTypeFromHeaders(headers["content-type"]) ===
+            normalizeContentType(contentType) });
 };
 const normalizeHeaders = (headers) => Object.entries(headers).reduce((acc, [key, value]) => (Object.assign(Object.assign({}, acc), { [key.toLowerCase()]: value })), {});
 class NullHttpRequest extends events_1.default {

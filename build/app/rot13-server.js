@@ -10,22 +10,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.app = void 0;
-const rot13_1 = require("../core/rot13");
-const rot13_response_1 = require("../routing/rot13-response");
+const rot13_router_1 = require("../routing/rot13-router");
 const app = (commandLine, httpServer) => {
     const runServerAsync = (server, port) => __awaiter(void 0, void 0, void 0, function* () {
         const onRequestAsync = (request) => __awaiter(void 0, void 0, void 0, function* () {
-            var _a;
             commandLine.writeOutpout("Recevied request");
-            if (request.url !== "rot-13/transform")
-                return (0, rot13_response_1.notFound)();
-            if (request.method !== "POST")
-                return (0, rot13_response_1.methodNotAllowed)();
-            if (!((_a = request.headers["Content-Type".toLowerCase()]) === null || _a === void 0 ? void 0 : _a.includes("application/json")))
-                return (0, rot13_response_1.invalidContentType)();
-            const input = yield request.readBodyAsync();
-            const output = (0, rot13_1.rot13)(input);
-            return (0, rot13_response_1.validResponse)(output);
+            return yield (0, rot13_router_1.routeAsync)(request);
         });
         yield server.startAsync({ port, onRequestAsync });
         commandLine.writeOutpout(`Server started on port ${port}`);

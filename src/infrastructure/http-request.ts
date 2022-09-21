@@ -19,7 +19,7 @@ interface Request {
 }
 
 export interface RequestAdapter {
-  url: string | undefined;
+  url: string;
   method: string | undefined;
   headers: Readonly<Record<string, string> | http.IncomingHttpHeaders>;
   readBodyAsync: () => Promise<string>;

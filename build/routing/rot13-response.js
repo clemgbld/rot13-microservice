@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.invalidContentType = exports.validResponse = exports.methodNotAllowed = exports.notFound = exports.errorResponse = void 0;
+exports.badRequest = exports.invalidContentType = exports.validResponse = exports.methodNotAllowed = exports.notFound = exports.errorResponse = void 0;
 const response = ({ status, value }) => ({
     status: status,
     headers: { "Content-Type": "application/json;charset=utf-8" },
@@ -16,3 +16,5 @@ const validResponse = (outpout) => response({ status: 200, value: { transformed:
 exports.validResponse = validResponse;
 const invalidContentType = () => (0, exports.errorResponse)({ status: 405, error: "Invalid content type" });
 exports.invalidContentType = invalidContentType;
+const badRequest = (error) => (0, exports.errorResponse)({ status: 400, error });
+exports.badRequest = badRequest;

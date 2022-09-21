@@ -92,6 +92,19 @@ describe("ROT13-Server", () => {
     });
   });
 
+  it("ignores query string query params", async () => {
+    const { response } = await simulateRequestAsync({
+      url: `${VALID_URL}?foo=bar`,
+      body: { text: "hello" },
+    });
+
+    expectResponseToEqual({
+      response,
+      status: 200,
+      value: { transformed: rot13("hello") },
+    });
+  });
+
   it("returns not found when the url is nor correct", async () => {
     const { response } = await simulateRequestAsync({
       url: "/no-such-url",
@@ -107,6 +120,7 @@ describe("ROT13-Server", () => {
   it("should give method not allowed when the method is not POST", async () => {
     const { response } = await simulateRequestAsync({
       method: "GET",
+      url: VALID_URL,
     });
 
     expectResponseToEqual({
@@ -120,6 +134,7 @@ describe("ROT13-Server", () => {
     const headers = { "Content-Type": "text/plain" };
     const { response } = await simulateRequestAsync({
       headers,
+      url: VALID_URL,
     });
 
     expectResponseToEqual({
@@ -133,6 +148,7 @@ describe("ROT13-Server", () => {
     const headers = {};
     const { response } = await simulateRequestAsync({
       headers,
+      url: VALID_URL,
     });
 
     expectResponseToEqual({
@@ -145,6 +161,7 @@ describe("ROT13-Server", () => {
   it("should give bad request when json does not have text field", async () => {
     const { response } = await simulateRequestAsync({
       body: { notText: "" },
+      url: VALID_URL,
     });
 
     expectResponseToEqual({
@@ -158,6 +175,7 @@ describe("ROT13-Server", () => {
     const body = { wrongField: "foo", text: "right field" };
     const { response } = await simulateRequestAsync({
       body,
+      url: VALID_URL,
     });
     expectResponseToEqual({
       response,
@@ -185,7 +203,10 @@ describe("ROT13-Server", () => {
 
 describe("parsing", () => {
   it("should give bad request when json fails to parse", async () => {
-    const { response } = await simulateRequestAsync({ body: "not-json" });
+    const { response } = await simulateRequestAsync({
+      body: "not-json",
+      url: VALID_URL,
+    });
     expect(response).toEqual({
       status: 400,
       headers: { "Content-Type": "application/json;charset=utf-8" },

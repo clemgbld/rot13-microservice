@@ -21,13 +21,13 @@ const startServerAsync = (args = ["5000"]) => __awaiter(void 0, void 0, void 0, 
     yield myApp.startAsync();
     return { nullCommandLine, nullHttpServer };
 });
-const VALID_URL = "rot-13/transform";
+const VALID_URL = "/rot-13/transform";
 const VALID_METHOD = "POST";
-const simulateRequestAsync = ({ url = VALID_URL, body = "irelevant", method = VALID_METHOD, headers = { "Content-Type": "application/json;charset=utf-8" }, }) => __awaiter(void 0, void 0, void 0, function* () {
+const simulateRequestAsync = ({ url = VALID_URL, body = { text: "" }, method = VALID_METHOD, headers = { "content-type": "application/json;charset=utf-8" }, }) => __awaiter(void 0, void 0, void 0, function* () {
     const { nullCommandLine, nullHttpServer } = yield startServerAsync();
     const request = http_request_1.httpRequest.createNull({
         url,
-        body,
+        body: typeof body === "object" ? JSON.stringify(body) : body,
         method,
         headers,
     });
@@ -54,12 +54,34 @@ describe("ROT13-Server", () => {
     it("transforms request", () => __awaiter(void 0, void 0, void 0, function* () {
         const { response } = yield simulateRequestAsync({
             url: VALID_URL,
-            body: "hello",
+            body: { text: "hello" },
         });
         expectResponseToEqual({
             response,
             status: 200,
             value: { transformed: (0, rot13_1.rot13)("hello") },
+        });
+    }));
+    it("ignores query string query params", () => __awaiter(void 0, void 0, void 0, function* () {
+        const { response } = yield simulateRequestAsync({
+            url: `${VALID_URL}?foo=bar`,
+            body: { text: "hello" },
+        });
+        expectResponseToEqual({
+            response,
+            status: 200,
+            value: { transformed: (0, rot13_1.rot13)("hello") },
+        });
+    }));
+    it("should give a 404 when there is no url", () => __awaiter(void 0, void 0, void 0, function* () {
+        const { response } = yield simulateRequestAsync({
+            url: undefined,
+            body: { text: "hello" },
+        });
+        expectResponseToEqual({
+            response,
+            status: 404,
+            value: { error: "Not found" },
         });
     }));
     it("returns not found when the url is nor correct", () => __awaiter(void 0, void 0, void 0, function* () {
@@ -104,14 +126,45 @@ describe("ROT13-Server", () => {
             value: { error: "Invalid content type" },
         });
     }));
+    it("should give bad request when json does not have text field", () => __awaiter(void 0, void 0, void 0, function* () {
+        const { response } = yield simulateRequestAsync({
+            body: { notText: "" },
+        });
+        expectResponseToEqual({
+            response,
+            status: 400,
+            value: { error: "Json must have text field" },
+        });
+    }));
+    it("ignores extranous fields", () => __awaiter(void 0, void 0, void 0, function* () {
+        const body = { wrongField: "foo", text: "right field" };
+        const { response } = yield simulateRequestAsync({
+            body,
+        });
+        expectResponseToEqual({
+            response,
+            status: 200,
+            value: { transformed: (0, rot13_1.rot13)("right field") },
+        });
+    }));
     describe("Command-line processing", () => {
         it("should tell the user to provide an argument when the user do not", () => __awaiter(void 0, void 0, void 0, function* () {
             const { nullCommandLine } = yield startServerAsync([]);
             expect(nullCommandLine.getLastOutpout()).toBe("please provide an argument\n");
         }));
-        it("should tell the user when he provide tto much argument", () => __awaiter(void 0, void 0, void 0, function* () {
+        it("should tell the user when he provide too much argument", () => __awaiter(void 0, void 0, void 0, function* () {
             const { nullCommandLine } = yield startServerAsync(["one", "two"]);
             expect(nullCommandLine.getLastOutpout()).toBe("please provide at most one argument\n");
         }));
     });
+});
+describe("parsing", () => {
+    it("should give bad request when json fails to parse", () => __awaiter(void 0, void 0, void 0, function* () {
+        const { response } = yield simulateRequestAsync({ body: "not-json" });
+        expect(response).toEqual({
+            status: 400,
+            headers: { "Content-Type": "application/json;charset=utf-8" },
+            body: '{"error":"Unexpected token o in JSON at position 1"}',
+        });
+    }));
 });

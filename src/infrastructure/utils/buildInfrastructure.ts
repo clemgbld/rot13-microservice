@@ -1,4 +1,3 @@
-import http from "http";
 import { pipe } from "ramda";
 import { withConstructor } from "../../utils/withConstructor";
 import { DependancyHttp } from "../http-server";
