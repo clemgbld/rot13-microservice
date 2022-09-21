@@ -1,7 +1,7 @@
 import { httpServer } from "../http-server";
 import { requestAsync } from "../../test-helper/helper";
-import { httpRequest, HttpRequest } from "../http-request";
-const PORT = 3541;
+import { httpRequest, RequestAdapter } from "../http-request";
+const PORT = 3517;
 
 interface Options {
   url?: string;
@@ -10,11 +10,11 @@ interface Options {
   body?: string[];
 }
 
-type ExpectFnAsync = (request: HttpRequest) => void;
+type ExpectFnAsync = (request: RequestAdapter) => void;
 
 const createRequestAsync = (options: Options, expectFnAsync: ExpectFnAsync) =>
   new Promise(async (resolve, reject) => {
-    const onRequestAsync = async (request: HttpRequest) => {
+    const onRequestAsync = async (request: RequestAdapter) => {
       try {
         expectFnAsync(request);
         return { status: 200, headers: {}, body: "" };
@@ -44,7 +44,16 @@ describe("HTTP Request", () => {
         {
           url: "/my-url",
         },
-        (request: HttpRequest) => expect(request.url).toBe("/my-url")
+        (request: RequestAdapter) => expect(request.pathName).toBe("/my-url")
+      );
+    });
+
+    it("provides the pathName", async () => {
+      await createRequestAsync(
+        {
+          url: "/my-url?foo=bar",
+        },
+        (request: RequestAdapter) => expect(request.pathName).toBe("/my-url")
       );
     });
 
@@ -53,7 +62,7 @@ describe("HTTP Request", () => {
         {
           method: "pOst",
         },
-        (request: HttpRequest) => expect(request.method).toBe("POST")
+        (request: RequestAdapter) => expect(request.method).toBe("POST")
       );
     });
 
@@ -63,7 +72,7 @@ describe("HTTP Request", () => {
         myHEader2: "myHeader2",
       };
 
-      await createRequestAsync({ headers }, (request: HttpRequest) => {
+      await createRequestAsync({ headers }, (request: RequestAdapter) => {
         expect(request.headers).toEqual({
           myheader1: "myHeader1",
           myheader2: "myHeader2",
@@ -79,7 +88,7 @@ describe("HTTP Request", () => {
         header: "value",
       };
 
-      await createRequestAsync({ headers }, (request: HttpRequest) => {
+      await createRequestAsync({ headers }, (request: RequestAdapter) => {
         try {
           delete request.headers.header;
         } catch (err: any) {
@@ -97,7 +106,7 @@ describe("HTTP Request", () => {
         {
           body,
         },
-        async (request: HttpRequest) =>
+        async (request: RequestAdapter) =>
           expect(await request.readBodyAsync()).toBe("chunk1chunk2")
       );
     });
@@ -108,7 +117,7 @@ describe("HTTP Request", () => {
         {
           body,
         },
-        async (request: HttpRequest) => {
+        async (request: RequestAdapter) => {
           await request.readBodyAsync();
           await expect(
             async () => await request.readBodyAsync()
@@ -191,8 +200,8 @@ describe("HTTP Request", () => {
 
 describe("nullability", () => {
   it("provides default values", async () => {
-    const request = httpRequest.createNull();
-    expect(request.url).toBe("/my-null-url");
+    const request = httpRequest.createNull({});
+    expect(request.pathName).toBe("/my-null-url");
     expect(request.method).toBe("GET");
     expect(request.headers).toEqual({});
     expect(await request.readBodyAsync()).toEqual("");
@@ -200,7 +209,7 @@ describe("nullability", () => {
 
   it("can configure the url", () => {
     const request = httpRequest.createNull({ url: "/my-url" });
-    expect(request.url).toBe("/my-url");
+    expect(request.pathName).toBe("/my-url");
   });
 
   it("can configure method (and normalize case)", () => {
@@ -228,7 +237,7 @@ describe("nullability", () => {
   });
 
   it("fails fast when body is read twice", async () => {
-    const request = httpRequest.createNull();
+    const request = httpRequest.createNull({});
     await request.readBodyAsync();
     await expect(
       async () => await request.readBodyAsync()

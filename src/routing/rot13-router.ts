@@ -12,9 +12,7 @@ import { RequestAdapter } from "../infrastructure/http-request";
 const postValidTransformedRes = pipe(rot13, validResponse);
 
 export const routeAsync = async (request: RequestAdapter) => {
-  const pathName = new URL(request.url, "http://unknown.host").pathname;
-
-  if (pathName !== "/rot-13/transform") return notFound();
+  if (request.pathName !== "/rot-13/transform") return notFound();
   if (request.method !== "POST") return methodNotAllowed();
   if (!request.hasContentType("application/json")) return invalidContentType();
 

@@ -21,9 +21,10 @@ interface Request {
 export interface RequestAdapter {
   url: string;
   method: string | undefined;
-  headers: Readonly<Record<string, string> | http.IncomingHttpHeaders>;
+  headers: Record<string, string> | http.IncomingHttpHeaders;
   readBodyAsync: () => Promise<string>;
   hasContentType: (contentType: string) => boolean;
+  pathName: string;
 }
 
 interface NullHttpRequest extends EventEmitter, Request {}
@@ -47,7 +48,8 @@ const withHttpRequest =
 
     return {
       ...o,
-      url: dependencyHttpRequest.url,
+      pathName: new URL(dependencyHttpRequest.url || "", "http://unknown.host")
+        .pathname,
       method: dependencyHttpRequest.method,
       headers,
       readBodyAsync: async () =>
