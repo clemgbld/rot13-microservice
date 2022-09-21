@@ -1,4 +1,5 @@
 import http from "http";
+import { pipe } from "ramda";
 import { buildInfrastructure } from "./utils/buildInfrastructure";
 import EventEmitter from "events";
 export interface HttpRequest {
@@ -22,6 +23,7 @@ export interface RequestAdapter {
   method: string | undefined;
   headers: Readonly<Record<string, string> | http.IncomingHttpHeaders>;
   readBodyAsync: () => Promise<string>;
+  hasContentType: (contentType: string) => boolean;
 }
 
 interface NullHttpRequest extends EventEmitter, Request {}
@@ -30,11 +32,24 @@ export type DependancyHttpRequest = http.IncomingMessage | NullHttpRequest;
 
 const withHttpRequest =
   (dependencyHttpRequest: DependancyHttpRequest) => (o: any) => {
+    let headers = Object.freeze(dependencyHttpRequest.headers);
+
+    const ignoreParameters = (contentType?: string) =>
+      contentType?.split(";")[0];
+
+    const normalizeContentType = (contentType?: string) =>
+      contentType?.toLowerCase().trim();
+
+    const normalizeContentTypeFromHeaders = pipe(
+      ignoreParameters,
+      normalizeContentType
+    );
+
     return {
       ...o,
       url: dependencyHttpRequest.url,
       method: dependencyHttpRequest.method,
-      headers: Object.freeze(dependencyHttpRequest.headers),
+      headers,
       readBodyAsync: async () =>
         await new Promise((resolve, reject) => {
           if (dependencyHttpRequest.readableEnded) {
@@ -49,6 +64,9 @@ const withHttpRequest =
             resolve(body);
           });
         }),
+      hasContentType: (contentType: string) =>
+        normalizeContentTypeFromHeaders(headers["content-type"]) ===
+        normalizeContentType(contentType),
     };
   };
 

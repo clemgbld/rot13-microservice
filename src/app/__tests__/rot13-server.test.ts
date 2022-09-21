@@ -33,7 +33,7 @@ const simulateRequestAsync = async ({
   url = VALID_URL,
   body = { text: "" },
   method = VALID_METHOD,
-  headers = { "Content-Type": "application/json;charset=utf-8" },
+  headers = { "content-type": "application/json;charset=utf-8" },
 }: SimulateRequest) => {
   const { nullCommandLine, nullHttpServer } = await startServerAsync();
 
