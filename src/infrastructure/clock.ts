@@ -4,10 +4,12 @@ import { withConstructor } from "../utils/withConstructor";
 
 interface FakeDateConstructor {
   now: () => number;
+
+  advanceNullAsync?: (milliseconds: number) => Promise<number>;
 }
 
 interface ClockDependancy {
-  Date: DateConstructor | FakeDateConstructor;
+  Date: FakeDateConstructor;
   setTimeout: (callback: () => Promise<unknown>, arg1?: number) => void;
 }
 
@@ -23,6 +25,9 @@ const withClock =
           setTimeout(async () => resolve("end of the timer"), miliseconds)
         ),
       advanceNullAsync: async (miliseconds: number) => {
+        if (!Date.advanceNullAsync) {
+          throw new Error("this method should not be use on real clock");
+        }
         await Date.advanceNullAsync(miliseconds);
       },
     };

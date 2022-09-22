@@ -15,6 +15,14 @@ describe("clock", () => {
     expect(expectedTime).toBeLessThanOrEqual(elapsedTime + 1);
   });
 
+  it("fails fast when we use advanceNullAsync in production mode", () => {
+    const realClock = clock.create();
+
+    expect(
+      async () => await realClock.advanceNullAsync(0)
+    ).rejects.toThrowError("this method should not be use on real clock");
+  });
+
   describe("nullability", () => {
     it("defaults now to 0 miliseconds", () => {
       const fakeClock = clock.createNull();
