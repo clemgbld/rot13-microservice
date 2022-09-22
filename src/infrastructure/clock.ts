@@ -2,9 +2,14 @@ import { pipe } from "ramda";
 import FakeTimers from "@sinonjs/fake-timers";
 import { withConstructor } from "../utils/withConstructor";
 
+export interface Clock {
+  now: () => number;
+  waitAsync: (miliseconds: number) => Promise<unknown>;
+  advanceNullAsync: (miliseconds: number) => Promise<void>;
+}
+
 interface FakeDateConstructor {
   now: () => number;
-
   advanceNullAsync?: (milliseconds: number) => Promise<number>;
 }
 
@@ -39,7 +44,6 @@ const withClock =
 
 const nullGlobals = (time = 0) => {
   const fake = FakeTimers.createClock(time);
-
   return {
     Date: {
       now: () => fake.Date.now(),

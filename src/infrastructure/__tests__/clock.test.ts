@@ -47,9 +47,7 @@ describe("clock", () => {
         wait = fakeClock.now();
       });
       expect(wait).toBe("waiting");
-
       await fakeClock.advanceNullAsync(20);
-
       expect(wait).toBe(10);
     });
   });
