@@ -11,10 +11,17 @@ interface FakeDateConstructor {
 interface ClockDependancy {
   Date: FakeDateConstructor;
   setTimeout: (callback: () => Promise<unknown>, arg1?: number) => void;
+  advanceNullAsync?: (milliseconds: number) => Promise<number>;
 }
 
 const withClock =
-  ({ Date, setTimeout }: ClockDependancy) =>
+  ({
+    Date,
+    setTimeout,
+    advanceNullAsync = async (miliseconds: number) => {
+      throw new Error("this method should not be use on real clock");
+    },
+  }: ClockDependancy) =>
   (o: any) => {
     return {
       ...o,
@@ -25,19 +32,21 @@ const withClock =
           setTimeout(async () => resolve("end of the timer"), miliseconds)
         ),
       advanceNullAsync: async (miliseconds: number) => {
-        if (!Date.advanceNullAsync) {
-          throw new Error("this method should not be use on real clock");
-        }
-        await Date.advanceNullAsync(miliseconds);
+        await advanceNullAsync(miliseconds);
       },
     };
   };
 
-const fakeDateConstructor = (time = 0) => {
+const nullGlobals = (time = 0) => {
   const fake = FakeTimers.createClock(time);
 
   return {
-    now: () => fake.Date.now(),
+    Date: {
+      now: () => fake.Date.now(),
+    },
+    setTimeout: async (fn: () => Promise<unknown>, arg1 = 0) => {
+      fake.setTimeout(fn, arg1);
+    },
     advanceNullAsync: async (milliseconds: number) =>
       fake.tickAsync(milliseconds),
   };
@@ -60,8 +69,5 @@ const createClock = (
 export const clock = {
   create: () => createClock({ Date, setTimeout }, clock),
   createNull: ({ now }: NullConfiguartion = {}) =>
-    createClock(
-      { Date: fakeDateConstructor(now), setTimeout: setTimeout },
-      clock
-    ),
+    createClock({ ...nullGlobals(now) }, clock),
 };

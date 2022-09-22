@@ -39,5 +39,18 @@ describe("clock", () => {
       await fakeClock.advanceNullAsync(10);
       expect(fakeClock.now()).toBe(10);
     });
+
+    it("can wait", async () => {
+      const fakeClock = clock.createNull();
+      let wait: number | string = "waiting";
+      fakeClock.waitAsync(10).then(() => {
+        wait = fakeClock.now();
+      });
+      expect(wait).toBe("waiting");
+
+      await fakeClock.advanceNullAsync(20);
+
+      expect(wait).toBe(10);
+    });
   });
 });
