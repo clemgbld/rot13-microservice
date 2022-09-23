@@ -1,4 +1,4 @@
-import { clock } from "../clock";
+import { clock, Clock } from "../clock";
 
 describe("clock", () => {
   it("provides current timestamp", () => {
@@ -50,5 +50,41 @@ describe("clock", () => {
       await fakeClock.advanceNullAsync(20);
       expect(wait).toBe(10);
     });
+  });
+});
+
+describe("local Date", () => {
+  const checkFormattedString = (
+    format: Record<string, string>,
+    local?: string
+  ) => {
+    const realClock = clock.create();
+    let expectedTime = new Date().toLocaleString(local, format);
+    const formattedDate = realClock.toFormattedString(format, "fr");
+
+    if (formattedDate !== expectedTime) {
+      expectedTime = new Date().toLocaleString("fr", format);
+    }
+    expect(formattedDate).toEqual(expectedTime);
+  };
+
+  it("outputs time using computer language and computer time zone", () => {
+    const format: Record<string, string> = {
+      dateStyle: "medium",
+      timeStyle: "short",
+    };
+
+    checkFormattedString(format);
+  });
+
+  it("outputs the current time using the configured time zone the local", () => {
+    const format: Record<string, string> = {
+      timeZone: "Europe/Paris",
+      timeStyle: "short",
+    };
+
+    const local = "fr";
+
+    checkFormattedString(format, local);
   });
 });

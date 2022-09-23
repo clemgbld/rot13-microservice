@@ -6,6 +6,7 @@ export interface Clock {
   now: () => number;
   waitAsync: (miliseconds: number) => Promise<unknown>;
   advanceNullAsync: (miliseconds: number) => Promise<void>;
+  toFormattedString: (format: Record<string, string>, locale?: string) => string
 }
 
 interface FakeDateConstructor {
@@ -27,20 +28,24 @@ const withClock =
       throw new Error("this method should not be use on real clock");
     },
   }: ClockDependancy) =>
-  (o: any) => {
-    return {
-      ...o,
-      now: () => Date.now(),
+  (o: any) => ({
+    ...o,
+    now: () => Date.now(),
 
-      waitAsync: async (miliseconds: number) =>
-        await new Promise((resolve) =>
-          setTimeout(async () => resolve("end of the timer"), miliseconds)
-        ),
-      advanceNullAsync: async (miliseconds: number) => {
-        await advanceNullAsync(miliseconds);
-      },
-    };
-  };
+    waitAsync: async (miliseconds: number) =>
+      await new Promise((resolve) =>
+        setTimeout(async () => resolve("end of the timer"), miliseconds)
+      ),
+    advanceNullAsync: async (miliseconds: number) => {
+      await advanceNullAsync(miliseconds);
+    },
+  });
+
+const withLocalTime = (o: any) => ( {
+    ...o,
+    toFormattedString: (format: Record<string, string>,locale?:string) =>
+      new Date().toLocaleString(locale, format),
+  })
 
 const nullGlobals = (time = 0) => {
   const fake = FakeTimers.createClock(time);
@@ -68,7 +73,12 @@ interface NullConfiguartion {
 const createClock = (
   depedancy: ClockDependancy,
   clockInfraBuilder: ClockInfraBuilder
-) => pipe(withClock(depedancy), withConstructor(clockInfraBuilder))({});
+) =>
+  pipe(
+    withClock(depedancy),
+    withLocalTime,
+    withConstructor(clockInfraBuilder)
+  )({});
 
 export const clock = {
   create: () => createClock({ Date, setTimeout }, clock),

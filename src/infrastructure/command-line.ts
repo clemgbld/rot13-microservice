@@ -15,7 +15,6 @@ export const nullProcess = (args: string[] = []): NullProcess => ({
   stdout: {
     write: (text: string): void => {},
   },
-
   argv: ["null_process_node", "null_process_script.js", ...args],
 });
 
