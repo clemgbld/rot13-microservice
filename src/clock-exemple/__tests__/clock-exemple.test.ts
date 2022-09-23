@@ -9,7 +9,7 @@ describe("clock exemple", () => {
     go(fakeCommandLine, fakeClock);
 
     expect(fakeCommandLine.getLastOutpout()).toBe(
-      "Jan 1, 1970, 14:00:00 GMT+1\n"
+      "Jan 1, 1970, 13:00:00 UTC\n"
     );
   });
 });

@@ -6,7 +6,7 @@ export const go = (commandLine: CommandLine, clock: Clock) => {
     dateStyle: "medium",
     timeStyle: "long",
     hour12: false,
-    timeZone: undefined,
+    timeZone: "UTC",
   };
 
   const time = clock.toFormattedString(format, "en-US");
