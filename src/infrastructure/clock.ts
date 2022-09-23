@@ -7,7 +7,7 @@ export interface Clock {
   waitAsync: (miliseconds: number) => Promise<unknown>;
   advanceNullAsync: (miliseconds: number) => Promise<void>;
   toFormattedString: (
-    format: Record<string, string | boolean>,
+    format: Record<string, string | boolean | undefined>,
     locale?: string
   ) => string;
 }
@@ -40,15 +40,22 @@ const withClock =
       await advanceNullAsync(miliseconds);
     },
     toFormattedString: (
-      format: Record<string, string | boolean>,
-      locale?: string
+      intlDateTimeFormatOptions: Record<string, string | boolean>,
+      optionalLocale?: string
     ) => {
-      const formatter = DateTimeFormat(locale, format);
+      const formatter = DateTimeFormat(
+        optionalLocale,
+        intlDateTimeFormatOptions
+      );
       return formatter.format(Date.now());
     },
   });
 
-const nullGlobals = (time = 0, configurableLocal = "fr", timeZone = "UTC") => {
+const nullGlobals = (
+  time = 0,
+  configurableLocal = "gv-GB",
+  timeZone = "Australia/Lord_Howe"
+) => {
   const fake = FakeTimers.createClock(time);
 
   return {
@@ -58,7 +65,7 @@ const nullGlobals = (time = 0, configurableLocal = "fr", timeZone = "UTC") => {
         locale = configurableLocal;
       }
       if (options && options.timeZone === undefined) {
-        options = { ...options, timeZone };
+        options = { timeZone, ...options };
       }
       return Intl.DateTimeFormat(locale, options);
     },

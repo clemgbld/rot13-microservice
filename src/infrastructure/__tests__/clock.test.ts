@@ -72,6 +72,7 @@ describe("local Date", () => {
     const format: Record<string, string> = {
       dateStyle: "medium",
       timeStyle: "short",
+      timeZone: "Europe/Paris",
     };
 
     checkFormattedString(format);
@@ -103,36 +104,40 @@ describe("local Date", () => {
       );
     });
 
-    it("defaults the time zone to GMT", () => {
+    it("defaults the time zone to little use value to prevent false sucess", () => {
       const format: Record<string, string> = {
         timeStyle: "long",
+        timeZone: "Australia/Lord_Howe",
       };
 
       const fakeClock = clock.createNull({ now: 0 });
 
       expect(fakeClock.toFormattedString(format, "en-US")).toBe(
-        "12:00:00 AM UTC"
+        "10:00:00 AM GMT+10"
       );
       expect(format).toEqual({
         timeStyle: "long",
+        timeZone: "Australia/Lord_Howe",
       });
     });
 
-    it("defaults locale to fr", () => {
+    it("defaults locale to little use value to prevent false sucess", () => {
       const format: Record<string, string> = {
         dateStyle: "medium",
         timeStyle: "long",
+        timeZone: "Australia/Lord_Howe",
       };
 
       const fakeClock = clock.createNull({ now: 0 });
       expect(fakeClock.toFormattedString(format)).toBe(
-        "1 janv. 1970, 00:00:00 UTC"
+        "1970 J-guer 1 10:00:00 GMT+10"
       );
     });
 
     it("allows local time zone and locale to be configured", () => {
       const format: Record<string, string> = {
         timeStyle: "long",
+        timeZone: "America/New_York",
       };
 
       const fakeClock = clock.createNull({
