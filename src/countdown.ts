@@ -10,4 +10,10 @@ export const countdownAsync = async (
     commandLine.writeOutpout(text);
     await clock.waitAsync(1000);
   }
+  commandLine.writeOutpout(
+    clock.toFormattedString({
+      dateStyle: "medium",
+      timeStyle: "short",
+    })
+  );
 };

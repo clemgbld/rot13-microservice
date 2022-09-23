@@ -87,4 +87,61 @@ describe("local Date", () => {
 
     checkFormattedString(format, local);
   });
+
+  describe("nullability", () => {
+    it("renders to formatted string", () => {
+      const format: Record<string, string> = {
+        timeZone: "Europe/Paris",
+        dateStyle: "medium",
+        timeStyle: "short",
+      };
+
+      const fakeClock = clock.createNull({ now: 0 });
+
+      expect(fakeClock.toFormattedString(format, "fr")).toBe(
+        "1 janv. 1970, 01:00"
+      );
+    });
+
+    it("defaults the time zone to GMT", () => {
+      const format: Record<string, string> = {
+        timeStyle: "long",
+      };
+
+      const fakeClock = clock.createNull({ now: 0 });
+
+      expect(fakeClock.toFormattedString(format, "en-US")).toBe(
+        "12:00:00 AM UTC"
+      );
+      expect(format).toEqual({
+        timeStyle: "long",
+      });
+    });
+
+    it("defaults locale to fr", () => {
+      const format: Record<string, string> = {
+        dateStyle: "medium",
+        timeStyle: "long",
+      };
+
+      const fakeClock = clock.createNull({ now: 0 });
+      expect(fakeClock.toFormattedString(format)).toBe(
+        "1 janv. 1970, 00:00:00 UTC"
+      );
+    });
+
+    it("allows local time zone and locale to be configured", () => {
+      const format: Record<string, string> = {
+        timeStyle: "long",
+      };
+
+      const fakeClock = clock.createNull({
+        now: 0,
+        timeZone: "America/New_York",
+        locale: "en-US",
+      });
+
+      expect(fakeClock.toFormattedString(format)).toBe("7:00:00 PM EST");
+    });
+  });
 });
