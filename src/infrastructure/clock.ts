@@ -7,7 +7,7 @@ export interface Clock {
   waitAsync: (miliseconds: number) => Promise<unknown>;
   advanceNullAsync: (miliseconds: number) => Promise<void>;
   toFormattedString: (
-    format: Record<string, string>,
+    format: Record<string, string | boolean>,
     locale?: string
   ) => string;
 }
@@ -39,7 +39,10 @@ const withClock =
     advanceNullAsync: async (miliseconds: number) => {
       await advanceNullAsync(miliseconds);
     },
-    toFormattedString: (format: Record<string, string>, locale?: string) => {
+    toFormattedString: (
+      format: Record<string, string | boolean>,
+      locale?: string
+    ) => {
       const formatter = DateTimeFormat(locale, format);
       return formatter.format(Date.now());
     },
