@@ -53,3 +53,69 @@ describe("clock", () => {
         }));
     });
 });
+describe("local Date", () => {
+    const checkFormattedString = (format, local) => {
+        const realClock = clock_1.clock.create();
+        let expectedTime = new Date().toLocaleString(local, format);
+        const formattedDate = realClock.toFormattedString(format, "fr");
+        if (formattedDate !== expectedTime) {
+            expectedTime = new Date().toLocaleString("fr", format);
+        }
+        expect(formattedDate).toEqual(expectedTime);
+    };
+    it("outputs time using computer language and computer time zone", () => {
+        const format = {
+            dateStyle: "medium",
+            timeStyle: "short",
+        };
+        checkFormattedString(format);
+    });
+    it("outputs the current time using the configured time zone the local", () => {
+        const format = {
+            timeZone: "Europe/Paris",
+            timeStyle: "short",
+        };
+        const local = "fr";
+        checkFormattedString(format, local);
+    });
+    describe("nullability", () => {
+        it("renders to formatted string", () => {
+            const format = {
+                timeZone: "Europe/Paris",
+                dateStyle: "medium",
+                timeStyle: "short",
+            };
+            const fakeClock = clock_1.clock.createNull({ now: 0 });
+            expect(fakeClock.toFormattedString(format, "fr")).toBe("1 janv. 1970, 01:00");
+        });
+        it("defaults the time zone to GMT", () => {
+            const format = {
+                timeStyle: "long",
+            };
+            const fakeClock = clock_1.clock.createNull({ now: 0 });
+            expect(fakeClock.toFormattedString(format, "en-US")).toBe("12:00:00 AM UTC");
+            expect(format).toEqual({
+                timeStyle: "long",
+            });
+        });
+        it("defaults locale to fr", () => {
+            const format = {
+                dateStyle: "medium",
+                timeStyle: "long",
+            };
+            const fakeClock = clock_1.clock.createNull({ now: 0 });
+            expect(fakeClock.toFormattedString(format)).toBe("1 janv. 1970, 00:00:00 UTC");
+        });
+        it("allows local time zone and locale to be configured", () => {
+            const format = {
+                timeStyle: "long",
+            };
+            const fakeClock = clock_1.clock.createNull({
+                now: 0,
+                timeZone: "America/New_York",
+                locale: "en-US",
+            });
+            expect(fakeClock.toFormattedString(format)).toBe("7:00:00 PM EST");
+        });
+    });
+});

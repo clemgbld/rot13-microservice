@@ -11,9 +11,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.countdownAsync = void 0;
 const countdownAsync = (textArr, commandLine, clock) => __awaiter(void 0, void 0, void 0, function* () {
-    for (let text of textArr) {
-        commandLine.writeOutpout(text);
-        yield clock.waitAsync(1000);
+    for (let i = 0; i < textArr.length; i++) {
+        commandLine.writeOutpout(textArr[i]);
+        if (i < textArr.length - 1)
+            yield clock.waitAsync(1000);
     }
+    commandLine.writeOutpout(clock.toFormattedString({
+        dateStyle: "medium",
+        timeStyle: "short",
+    }));
 });
 exports.countdownAsync = countdownAsync;

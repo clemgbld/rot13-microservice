@@ -20,9 +20,7 @@ describe("countdown", () => {
     expect(consume()).toEqual(["3\n"]);
     await advanceOneSecondAsync(fakeClock);
     expect(consume()).toEqual(["2\n"]);
-
     await advanceOneSecondAsync(fakeClock);
-
     expect(outpouts).toEqual(["1\n", "31 груд. 1969 р., 19:00\n"]);
   });
 });
