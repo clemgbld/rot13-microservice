@@ -1,4 +1,4 @@
-import { clock, Clock } from "../clock";
+import { clock } from "../clock";
 
 describe("clock", () => {
   it("provides current timestamp", () => {
