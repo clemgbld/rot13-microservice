@@ -12,8 +12,6 @@ interface NullProcess {
 export interface CommandLine {
   writeOutpout: (text: string) => void;
   args: () => string[];
-  getLastOutpout: () => string;
-  onStdout: (fn: (str: string) => void) => () => void;
 
   trackStdout: () => {
     outpouts: string[];
@@ -32,27 +30,18 @@ export const nullProcess = (args: string[] = []): NullProcess => ({
 export const commandLine = (
   process: NodeJS.Process | NullProcess
 ): CommandLine => {
-  let lastOutpout: string;
   const emitter = new EventEmitter();
   const onStdout = (fn: (str: string) => void) => {
     emitter.on(STDOUT_EVENT, fn);
-
-    return () => {
-      emitter.off(STDOUT_EVENT, fn);
-    };
+    return () => emitter.off(STDOUT_EVENT, fn);
   };
   return {
     writeOutpout: (text: string): void => {
       const outpout = `${text}\n`;
       process.stdout.write(outpout);
-      lastOutpout = outpout;
       emitter.emit(STDOUT_EVENT, outpout);
     },
     args: () => process.argv.slice(2),
-
-    getLastOutpout: () => lastOutpout,
-
-    onStdout,
 
     trackStdout: () => {
       let outpouts: string[] = [];
