@@ -35,4 +35,14 @@ describe("command-line nullability", () => {
     NullableCommandLine.writeOutpout("B");
     expect(lastStdout).toBe("A\n");
   });
+
+  it("tracks write to sdout and turn off tracking as well", () => {
+    const NullableCommandLine = commandLine(nullProcess());
+    const { outpouts, turnOffTracking } = NullableCommandLine.trackStdout();
+    NullableCommandLine.writeOutpout("A");
+    expect(outpouts).toEqual(["A\n"]);
+    NullableCommandLine.writeOutpout("B");
+    turnOffTracking();
+    expect(outpouts).toEqual([]);
+  });
 });

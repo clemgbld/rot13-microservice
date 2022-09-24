@@ -14,6 +14,8 @@ export interface CommandLine {
   args: () => string[];
   getLastOutpout: () => string;
   onStdout: (fn: (str: string) => void) => () => void;
+
+  trackStdout: () => { outpouts: string[]; turnOffTracking: () => void };
 }
 
 export const nullProcess = (args: string[] = []): NullProcess => ({
@@ -28,6 +30,13 @@ export const commandLine = (
 ): CommandLine => {
   let lastOutpout: string;
   const emitter = new EventEmitter();
+  const onStdout = (fn: (str: string) => void) => {
+    emitter.on(STDOUT_EVENT, fn);
+
+    return () => {
+      emitter.off(STDOUT_EVENT, fn);
+    };
+  };
   return {
     writeOutpout: (text: string): void => {
       const outpout = `${text}\n`;
@@ -39,12 +48,16 @@ export const commandLine = (
 
     getLastOutpout: () => lastOutpout,
 
-    onStdout: (fn: (str: string) => void) => {
-      emitter.on(STDOUT_EVENT, fn);
+    onStdout,
 
-      return () => {
-        emitter.off(STDOUT_EVENT, fn);
+    trackStdout: () => {
+      let outpouts: string[] = [];
+      const off = onStdout((text: string) => outpouts.push(text));
+      const turnOffTracking = () => {
+        outpouts.length = 0;
+        off();
       };
+      return { outpouts, turnOffTracking };
     },
   };
 };

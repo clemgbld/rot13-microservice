@@ -19,14 +19,10 @@ describe("countdown", () => {
     await advanceOneSecondAsync(fakeClock);
     expect(nullCommandLine.getLastOutpout()).toBe("2\n");
 
-    let outputs: string[] = [];
-
-    nullCommandLine.onStdout((text) => {
-      outputs = [...outputs, text];
-    });
+    const { outpouts } = nullCommandLine.trackStdout();
 
     await advanceOneSecondAsync(fakeClock);
 
-    expect(outputs).toEqual(["1\n", "31 груд. 1969 р., 19:00\n"]);
+    expect(outpouts).toEqual(["1\n", "31 груд. 1969 р., 19:00\n"]);
   });
 });
