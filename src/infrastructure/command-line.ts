@@ -1,4 +1,5 @@
 import EventEmitter from "events";
+import { trackOutput, Output } from "./utils/trackOutput";
 
 const STDOUT_EVENT = "stdout";
 
@@ -14,9 +15,9 @@ export interface CommandLine {
   args: () => string[];
 
   trackStdout: () => {
-    outpouts: string[];
+    outpouts: Output[];
     turnOffTracking: () => void;
-    consume: () => string[];
+    consume: () => Output[];
   };
 }
 
@@ -31,10 +32,6 @@ export const commandLine = (
   process: NodeJS.Process | NullProcess
 ): CommandLine => {
   const emitter = new EventEmitter();
-  const onStdout = (fn: (str: string) => void) => {
-    emitter.on(STDOUT_EVENT, fn);
-    return () => emitter.off(STDOUT_EVENT, fn);
-  };
   return {
     writeOutpout: (text: string): void => {
       const outpout = `${text}\n`;
@@ -43,26 +40,6 @@ export const commandLine = (
     },
     args: () => process.argv.slice(2),
 
-    trackStdout: () => {
-      let outpouts: string[] = [];
-
-      const off = onStdout((text: string) => {
-        outpouts.push(text);
-      });
-
-      const consume = () => {
-        let result = [...outpouts];
-
-        outpouts.length = 0;
-
-        return result;
-      };
-      const turnOffTracking = () => {
-        consume();
-        off();
-      };
-
-      return { outpouts, turnOffTracking, consume };
-    },
+    trackStdout: () => trackOutput(emitter, STDOUT_EVENT),
   };
 };
