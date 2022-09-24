@@ -8,7 +8,14 @@ describe("log", () => {
     const fakeClock = clock.createNull({ now: 0 });
     const { outpouts } = fakeCommandLine.trackStdout();
     const logger = log(fakeCommandLine, fakeClock);
-    logger.info();
-    expect(outpouts).toEqual(["Jan 1, 1970, 00:00:00 UTC\n"]);
+
+    const data: Record<string, string> = {
+      output: "my output",
+    };
+
+    logger.info(data);
+    expect(outpouts).toEqual([
+      `Jan 1, 1970, 00:00:00 UTC ${JSON.stringify(data)}\n`,
+    ]);
   });
 });

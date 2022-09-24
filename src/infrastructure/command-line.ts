@@ -14,9 +14,9 @@ export interface CommandLine {
   args: () => string[];
 
   trackStdout: () => {
-    outpouts: (string | Record<string, string>)[];
+    outpouts: string[];
     turnOffTracking: () => void;
-    consume: () => (string | Record<string, string>)[];
+    consume: () => string[];
   };
 }
 
@@ -36,7 +36,7 @@ export const commandLine = (
     return () => emitter.off(STDOUT_EVENT, fn);
   };
   return {
-    writeOutpout: (text: string | Record<string, string>): void => {
+    writeOutpout: (text: string): void => {
       const outpout = `${text}\n`;
       process.stdout.write(outpout);
       emitter.emit(STDOUT_EVENT, outpout);
@@ -44,9 +44,9 @@ export const commandLine = (
     args: () => process.argv.slice(2),
 
     trackStdout: () => {
-      let outpouts: (string | Record<string, string>)[] = [];
+      let outpouts: string[] = [];
 
-      const off = onStdout((text: string | Record<string, string>) => {
+      const off = onStdout((text: string) => {
         outpouts.push(text);
       });
 

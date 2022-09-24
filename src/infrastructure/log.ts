@@ -2,7 +2,7 @@ import { CommandLine } from "./command-line";
 import { Clock } from "./clock";
 
 export const log = (commandLine: CommandLine, clock: Clock) => ({
-  info: () => {
+  info: (data: Record<string, string>) => {
     const options: Record<string, string | boolean> = {
       timeZone: "UTC",
       dateStyle: "medium",
@@ -10,6 +10,6 @@ export const log = (commandLine: CommandLine, clock: Clock) => ({
       hourCycle: "h23",
     };
     const time = clock.toFormattedString(options, "en-US");
-    commandLine.writeOutpout(time);
+    commandLine.writeOutpout(`${time} ${JSON.stringify(data)}`);
   },
 });
