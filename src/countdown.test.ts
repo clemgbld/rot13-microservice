@@ -14,12 +14,12 @@ describe("countdown", () => {
       locale: "uk",
       timeZone: "America/New_York",
     });
-    countdownAsync(text, nullCommandLine, fakeClock);
-    expect(nullCommandLine.getLastOutpout()).toBe("3\n");
-    await advanceOneSecondAsync(fakeClock);
-    expect(nullCommandLine.getLastOutpout()).toBe("2\n");
 
-    const { outpouts } = nullCommandLine.trackStdout();
+    const { outpouts, consume } = nullCommandLine.trackStdout();
+    countdownAsync(text, nullCommandLine, fakeClock);
+    expect(consume()).toEqual(["3\n"]);
+    await advanceOneSecondAsync(fakeClock);
+    expect(consume()).toEqual(["2\n"]);
 
     await advanceOneSecondAsync(fakeClock);
 

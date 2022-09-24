@@ -45,4 +45,13 @@ describe("command-line nullability", () => {
     turnOffTracking();
     expect(outpouts).toEqual([]);
   });
+
+  it("allows output to be consume", () => {
+    const NullableCommandLine = commandLine(nullProcess());
+    const { consume } = NullableCommandLine.trackStdout();
+    NullableCommandLine.writeOutpout("A");
+    expect(consume()).toEqual(["A\n"]);
+    NullableCommandLine.writeOutpout("B");
+    expect(consume()).toEqual(["B\n"]);
+  });
 });

@@ -15,7 +15,11 @@ export interface CommandLine {
   getLastOutpout: () => string;
   onStdout: (fn: (str: string) => void) => () => void;
 
-  trackStdout: () => { outpouts: string[]; turnOffTracking: () => void };
+  trackStdout: () => {
+    outpouts: string[];
+    turnOffTracking: () => void;
+    consume: () => string[];
+  };
 }
 
 export const nullProcess = (args: string[] = []): NullProcess => ({
@@ -52,12 +56,24 @@ export const commandLine = (
 
     trackStdout: () => {
       let outpouts: string[] = [];
-      const off = onStdout((text: string) => outpouts.push(text));
-      const turnOffTracking = () => {
+
+      const off = onStdout((text: string) => {
+        outpouts.push(text);
+      });
+
+      const consume = () => {
+        let result = [...outpouts];
+
         outpouts.length = 0;
+
+        return result;
+      };
+      const turnOffTracking = () => {
+        consume();
         off();
       };
-      return { outpouts, turnOffTracking };
+
+      return { outpouts, turnOffTracking, consume };
     },
   };
 };
