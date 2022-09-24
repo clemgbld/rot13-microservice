@@ -1,6 +1,5 @@
-import { pipe } from "ramda";
 import FakeTimers from "@sinonjs/fake-timers";
-import { withConstructor } from "../utils/withConstructor";
+import { buildInfrastructure } from "./utils/buildInfrastructure";
 
 export interface Clock {
   Date: DateConstructor;
@@ -67,28 +66,23 @@ const nullGlobals = (time = 0, configurableLocal = "fr", timeZone = "UTC") => {
   };
 };
 
-interface ClockInfraBuilder {
-  create: () => any;
-  createNull: (params: NullConfiguartion) => any;
-}
-
 interface NullConfiguartion {
   now?: number;
   locale?: string;
   timeZone?: string;
 }
 
-const createClock = (
-  depedancy: ClockDependancy,
-  clockInfraBuilder: ClockInfraBuilder
-) => pipe(withClock(depedancy), withConstructor(clockInfraBuilder))({});
-
 export const clock = {
   create: () =>
-    createClock(
-      { Date, DateTimeFormat: Intl.DateTimeFormat, setTimeout },
-      clock
-    ),
+    buildInfrastructure({
+      dependancy: { Date, DateTimeFormat: Intl.DateTimeFormat, setTimeout },
+      infrastructureObj: clock,
+      withMixin: withClock,
+    }),
   createNull: ({ now, locale, timeZone }: NullConfiguartion = {}) =>
-    createClock({ ...nullGlobals(now, locale, timeZone) }, clock),
+    buildInfrastructure({
+      dependancy: { ...nullGlobals(now, locale, timeZone) },
+      infrastructureObj: clock,
+      withMixin: withClock,
+    }),
 };
