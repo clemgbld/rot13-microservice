@@ -20,4 +20,19 @@ describe("command-line nullability", () => {
     const NullableCommandLine = commandLine(nullProcess(["one", "two"]));
     expect(NullableCommandLine.args()).toEqual(["one", "two"]);
   });
+
+  it("emists an event when output occurs", () => {
+    const NullableCommandLine = commandLine(nullProcess());
+    let lastStdout = "none";
+    const off = NullableCommandLine.onStdout((text) => {
+      lastStdout = text;
+    });
+
+    NullableCommandLine.writeOutpout("A");
+
+    expect(lastStdout).toBe("A\n");
+    off();
+    NullableCommandLine.writeOutpout("B");
+    expect(lastStdout).toBe("A\n");
+  });
 });

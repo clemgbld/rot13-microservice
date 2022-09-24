@@ -6,9 +6,9 @@ export const countdownAsync = async (
   commandLine: CommandLine,
   clock: Clock
 ) => {
-  for (let text of textArr) {
-    commandLine.writeOutpout(text);
-    await clock.waitAsync(1000);
+  for (let i = 0; i < textArr.length; i++) {
+    commandLine.writeOutpout(textArr[i]);
+    if (i < textArr.length - 1) await clock.waitAsync(1000);
   }
   commandLine.writeOutpout(
     clock.toFormattedString({
