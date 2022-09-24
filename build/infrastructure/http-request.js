@@ -21,7 +21,8 @@ const withHttpRequest = (dependencyHttpRequest) => (o) => {
     const ignoreParameters = (contentType) => contentType === null || contentType === void 0 ? void 0 : contentType.split(";")[0];
     const normalizeContentType = (contentType) => contentType === null || contentType === void 0 ? void 0 : contentType.toLowerCase().trim();
     const normalizeContentTypeFromHeaders = (0, ramda_1.pipe)(ignoreParameters, normalizeContentType);
-    return Object.assign(Object.assign({}, o), { url: dependencyHttpRequest.url, method: dependencyHttpRequest.method, headers, readBodyAsync: () => __awaiter(void 0, void 0, void 0, function* () {
+    return Object.assign(Object.assign({}, o), { pathName: new URL(dependencyHttpRequest.url || "", "http://unknown.host")
+            .pathname, method: dependencyHttpRequest.method, headers, readBodyAsync: () => __awaiter(void 0, void 0, void 0, function* () {
             return yield new Promise((resolve, reject) => {
                 if (dependencyHttpRequest.readableEnded) {
                     throw new Error("Cannot read the body twice");

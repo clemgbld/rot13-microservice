@@ -12,7 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const http_server_1 = require("../http-server");
 const helper_1 = require("../../test-helper/helper");
 const http_request_1 = require("../http-request");
-const PORT = 3549;
+const PORT = 3517;
 const createRequestAsync = (options, expectFnAsync) => new Promise((resolve, reject) => __awaiter(void 0, void 0, void 0, function* () {
     const onRequestAsync = (request) => __awaiter(void 0, void 0, void 0, function* () {
         try {
@@ -37,7 +37,12 @@ describe("HTTP Request", () => {
         it("provides the url", () => __awaiter(void 0, void 0, void 0, function* () {
             yield createRequestAsync({
                 url: "/my-url",
-            }, (request) => expect(request.url).toBe("/my-url"));
+            }, (request) => expect(request.pathName).toBe("/my-url"));
+        }));
+        it("provides the pathName", () => __awaiter(void 0, void 0, void 0, function* () {
+            yield createRequestAsync({
+                url: "/my-url?foo=bar",
+            }, (request) => expect(request.pathName).toBe("/my-url"));
         }));
         it("provides the method (and normalized case)", () => __awaiter(void 0, void 0, void 0, function* () {
             yield createRequestAsync({
@@ -148,15 +153,15 @@ describe("HTTP Request", () => {
 });
 describe("nullability", () => {
     it("provides default values", () => __awaiter(void 0, void 0, void 0, function* () {
-        const request = http_request_1.httpRequest.createNull();
-        expect(request.url).toBe("/my-null-url");
+        const request = http_request_1.httpRequest.createNull({});
+        expect(request.pathName).toBe("/my-null-url");
         expect(request.method).toBe("GET");
         expect(request.headers).toEqual({});
         expect(yield request.readBodyAsync()).toEqual("");
     }));
     it("can configure the url", () => {
         const request = http_request_1.httpRequest.createNull({ url: "/my-url" });
-        expect(request.url).toBe("/my-url");
+        expect(request.pathName).toBe("/my-url");
     });
     it("can configure method (and normalize case)", () => {
         const request = http_request_1.httpRequest.createNull({ method: "pOst" });
@@ -179,7 +184,7 @@ describe("nullability", () => {
         expect(yield request.readBodyAsync()).toBe("my body");
     }));
     it("fails fast when body is read twice", () => __awaiter(void 0, void 0, void 0, function* () {
-        const request = http_request_1.httpRequest.createNull();
+        const request = http_request_1.httpRequest.createNull({});
         yield request.readBodyAsync();
         yield expect(() => __awaiter(void 0, void 0, void 0, function* () { return yield request.readBodyAsync(); })).rejects.toThrowError("Cannot read the body twice");
     }));

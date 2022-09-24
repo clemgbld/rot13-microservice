@@ -73,17 +73,6 @@ describe("ROT13-Server", () => {
             value: { transformed: (0, rot13_1.rot13)("hello") },
         });
     }));
-    it("should give a 404 when there is no url", () => __awaiter(void 0, void 0, void 0, function* () {
-        const { response } = yield simulateRequestAsync({
-            url: undefined,
-            body: { text: "hello" },
-        });
-        expectResponseToEqual({
-            response,
-            status: 404,
-            value: { error: "Not found" },
-        });
-    }));
     it("returns not found when the url is nor correct", () => __awaiter(void 0, void 0, void 0, function* () {
         const { response } = yield simulateRequestAsync({
             url: "/no-such-url",
@@ -97,6 +86,7 @@ describe("ROT13-Server", () => {
     it("should give method not allowed when the method is not POST", () => __awaiter(void 0, void 0, void 0, function* () {
         const { response } = yield simulateRequestAsync({
             method: "GET",
+            url: VALID_URL,
         });
         expectResponseToEqual({
             response,
@@ -108,6 +98,7 @@ describe("ROT13-Server", () => {
         const headers = { "Content-Type": "text/plain" };
         const { response } = yield simulateRequestAsync({
             headers,
+            url: VALID_URL,
         });
         expectResponseToEqual({
             response,
@@ -119,6 +110,7 @@ describe("ROT13-Server", () => {
         const headers = {};
         const { response } = yield simulateRequestAsync({
             headers,
+            url: VALID_URL,
         });
         expectResponseToEqual({
             response,
@@ -129,6 +121,7 @@ describe("ROT13-Server", () => {
     it("should give bad request when json does not have text field", () => __awaiter(void 0, void 0, void 0, function* () {
         const { response } = yield simulateRequestAsync({
             body: { notText: "" },
+            url: VALID_URL,
         });
         expectResponseToEqual({
             response,
@@ -140,6 +133,7 @@ describe("ROT13-Server", () => {
         const body = { wrongField: "foo", text: "right field" };
         const { response } = yield simulateRequestAsync({
             body,
+            url: VALID_URL,
         });
         expectResponseToEqual({
             response,
@@ -160,7 +154,10 @@ describe("ROT13-Server", () => {
 });
 describe("parsing", () => {
     it("should give bad request when json fails to parse", () => __awaiter(void 0, void 0, void 0, function* () {
-        const { response } = yield simulateRequestAsync({ body: "not-json" });
+        const { response } = yield simulateRequestAsync({
+            body: "not-json",
+            url: VALID_URL,
+        });
         expect(response).toEqual({
             status: 400,
             headers: { "Content-Type": "application/json;charset=utf-8" },

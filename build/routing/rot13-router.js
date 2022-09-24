@@ -15,8 +15,7 @@ const rot13_response_1 = require("./rot13-response");
 const rot13_1 = require("../core/rot13");
 const postValidTransformedRes = (0, ramda_1.pipe)(rot13_1.rot13, rot13_response_1.validResponse);
 const routeAsync = (request) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
-    if (((_a = request.url) === null || _a === void 0 ? void 0 : _a.split("?")[0]) !== "/rot-13/transform")
+    if (request.pathName !== "/rot-13/transform")
         return (0, rot13_response_1.notFound)();
     if (request.method !== "POST")
         return (0, rot13_response_1.methodNotAllowed)();
