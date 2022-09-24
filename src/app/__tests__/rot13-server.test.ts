@@ -20,10 +20,11 @@ interface SimulateRequest {
 const startServerAsync = async (args: string[] = ["5000"]) => {
   const nullCommandLine = commandLine(nullProcess(args));
   const nullHttpServer = httpServer.createNull();
+  const { consume } = nullCommandLine.trackStdout();
   const myApp = app(nullCommandLine, nullHttpServer);
   await myApp.startAsync();
 
-  return { nullCommandLine, nullHttpServer };
+  return { nullHttpServer, consume };
 };
 
 const VALID_URL = "/rot-13/transform";
@@ -35,8 +36,8 @@ const simulateRequestAsync = async ({
   method = VALID_METHOD,
   headers = { "content-type": "application/json;charset=utf-8" },
 }: SimulateRequest) => {
-  const { nullCommandLine, nullHttpServer } = await startServerAsync();
-
+  const { consume, nullHttpServer } = await startServerAsync();
+  consume();
   const request = httpRequest.createNull({
     url,
     body: typeof body === "object" ? JSON.stringify(body) : body,
@@ -45,7 +46,7 @@ const simulateRequestAsync = async ({
   });
   const response = await nullHttpServer.simulateRequest(request);
 
-  return { nullCommandLine, response };
+  return { consume, response };
 };
 
 const expectResponseToEqual = ({
@@ -65,18 +66,16 @@ const expectResponseToEqual = ({
 
 describe("ROT13-Server", () => {
   it("starts the server", async () => {
-    const { nullCommandLine, nullHttpServer } = await startServerAsync([
-      "5000",
-    ]);
+    const { consume, nullHttpServer } = await startServerAsync(["5000"]);
+
     expect(nullHttpServer.isStarted()).toBe(true);
-    expect(nullCommandLine.getLastOutpout()).toBe(
-      "Server started on port 5000\n"
-    );
+    expect(consume()).toEqual(["Server started on port 5000\n"]);
   });
 
   it("logs 'Recieved request' to the command-line when request is received", async () => {
-    const { nullCommandLine } = await simulateRequestAsync({});
-    expect(nullCommandLine.getLastOutpout()).toBe("Recevied request\n");
+    const { consume } = await simulateRequestAsync({});
+
+    expect(consume()).toEqual(["Recevied request\n"]);
   });
 
   it("transforms request", async () => {
@@ -186,17 +185,15 @@ describe("ROT13-Server", () => {
 
   describe("Command-line processing", () => {
     it("should tell the user to provide an argument when the user do not", async () => {
-      const { nullCommandLine } = await startServerAsync([]);
-      expect(nullCommandLine.getLastOutpout()).toBe(
-        "please provide an argument\n"
-      );
+      const { consume } = await startServerAsync([]);
+
+      expect(consume()).toEqual(["please provide an argument\n"]);
     });
 
     it("should tell the user when he provide too much argument", async () => {
-      const { nullCommandLine } = await startServerAsync(["one", "two"]);
-      expect(nullCommandLine.getLastOutpout()).toBe(
-        "please provide at most one argument\n"
-      );
+      const { consume } = await startServerAsync(["one", "two"]);
+
+      expect(consume()).toEqual(["please provide at most one argument\n"]);
     });
   });
 });
