@@ -4,7 +4,7 @@ const STDOUT_EVENT = "stdout";
 
 interface NullProcess {
   stdout: {
-    write: (text: string) => void;
+    write: (text: string | Record<string, string>) => void;
   };
   argv: string[];
 }
@@ -14,15 +14,15 @@ export interface CommandLine {
   args: () => string[];
 
   trackStdout: () => {
-    outpouts: string[];
+    outpouts: (string | Record<string, string>)[];
     turnOffTracking: () => void;
-    consume: () => string[];
+    consume: () => (string | Record<string, string>)[];
   };
 }
 
 export const nullProcess = (args: string[] = []): NullProcess => ({
   stdout: {
-    write: (text: string): void => {},
+    write: (text: string | Record<string, string>): void => {},
   },
   argv: ["null_process_node", "null_process_script.js", ...args],
 });
@@ -36,7 +36,7 @@ export const commandLine = (
     return () => emitter.off(STDOUT_EVENT, fn);
   };
   return {
-    writeOutpout: (text: string): void => {
+    writeOutpout: (text: string | Record<string, string>): void => {
       const outpout = `${text}\n`;
       process.stdout.write(outpout);
       emitter.emit(STDOUT_EVENT, outpout);
@@ -44,9 +44,9 @@ export const commandLine = (
     args: () => process.argv.slice(2),
 
     trackStdout: () => {
-      let outpouts: string[] = [];
+      let outpouts: (string | Record<string, string>)[] = [];
 
-      const off = onStdout((text: string) => {
+      const off = onStdout((text: string | Record<string, string>) => {
         outpouts.push(text);
       });
 

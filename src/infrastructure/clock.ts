@@ -6,7 +6,7 @@ export interface Clock {
   waitAsync: (miliseconds: number) => Promise<unknown>;
   advanceNullAsync: (miliseconds: number) => Promise<void>;
   toFormattedString: (
-    format: Record<string, string>,
+    format: Record<string, string | boolean>,
     locale?: string
   ) => string;
 }
@@ -38,7 +38,10 @@ const withClock =
     advanceNullAsync: async (miliseconds: number) => {
       await advanceNullAsync(miliseconds);
     },
-    toFormattedString: (format: Record<string, string>, locale?: string) => {
+    toFormattedString: (
+      format: Record<string, string | boolean>,
+      locale?: string
+    ) => {
       const formatter = DateTimeFormat(locale, format);
       return formatter.format(Date.now());
     },
@@ -49,7 +52,10 @@ const nullGlobals = (time = 0, configurableLocal = "fr", timeZone = "UTC") => {
 
   return {
     Date: fake.Date,
-    DateTimeFormat: (locale?: string, options?: Record<string, string>) => {
+    DateTimeFormat: (
+      locale?: string,
+      options?: Record<string, string | boolean>
+    ) => {
       if (locale === undefined) {
         locale = configurableLocal;
       }
