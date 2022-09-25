@@ -1,12 +1,12 @@
 import http from "http";
+import { httpClient } from "../http-client";
 
-interface Request {
-  host: string;
-  port: number;
-  method: string;
-  headers: Record<string, string>;
-  path: string;
-  body: string;
+interface Server {
+  startAsync: () => Promise<unknown>;
+  stopAsync: () => Promise<unknown>;
+  getLastRequest: () => LastRequest | null;
+  setResponse: (response: Response) => void;
+  reset: () => void;
 }
 
 interface LastRequest {
@@ -16,23 +16,27 @@ interface LastRequest {
   headers: http.IncomingHttpHeaders;
 }
 
+interface Response {
+  status: number;
+  headers: Record<string, string>;
+  body?: string;
+}
+
 const HOST = "localhost";
 const PORT = 3274;
 
 const createSpyServer = () => {
   const server = http.createServer();
-  let lastRequest: LastRequest;
+  let lastRequest: LastRequest | null;
+  let nextResponse: Response;
   return {
     startAsync: async () =>
       new Promise((resolve, reject) => {
-        console.log("starting server");
         server.once("listening", () => {
           resolve("resolve");
         });
 
         server.on("request", (req, res) => {
-          console.log("receiving request");
-
           let body = "";
 
           req.on("data", (chunk: string) => {
@@ -53,7 +57,12 @@ const createSpyServer = () => {
               body,
             };
 
-            res.end();
+            res.statusCode = nextResponse.status;
+            Object.entries(nextResponse.headers).forEach(([key, value]) => {
+              res.setHeader(key, value);
+            });
+
+            res.end(nextResponse.body);
           });
         });
 
@@ -67,57 +76,64 @@ const createSpyServer = () => {
         server.close();
       }),
     getLastRequest: () => lastRequest,
+    setResponse: (response: Response) => {
+      nextResponse = response;
+    },
+    reset: () => {
+      lastRequest = null;
+      nextResponse = {
+        status: 500,
+        headers: { header: "header not specci" },
+        body: "no body specified yet",
+      };
+    },
   };
 };
 
-const requestAsync = async ({
-  host,
-  port,
-  method,
-  headers,
-  path,
-  body,
-}: Request) =>
-  await new Promise((resolve, reject) => {
-    const request = http.request({
-      host,
-      port,
-      method,
-      headers,
-      path,
-    });
+describe("HTTP client", () => {
+  let server: Server;
 
-    request.end(body);
-
-    request.on("response", (res) => {
-      res.resume();
-
-      resolve("response");
-    });
+  beforeAll(async () => {
+    server = createSpyServer();
+    await server.startAsync();
   });
 
-describe("HTTP client", () => {
-  it("performs request", async () => {
-    const server = createSpyServer();
-    await server.startAsync();
+  beforeEach(() => {
+    server.reset();
+  });
 
-    try {
-      await requestAsync({
-        host: HOST,
-        port: PORT,
-        method: "POST",
-        headers: { myRequestHeader: "my value" },
-        path: "/my-path",
-        body: "my-body",
-      });
-      expect(server.getLastRequest()).toEqual({
-        method: "POST",
-        headers: { myrequestheader: "my value" },
-        path: "/my-path",
-        body: "my-body",
-      });
-    } finally {
-      await server.stopAsync();
-    }
+  afterAll(async () => {
+    await server.stopAsync();
+  });
+
+  it("performs request and returns a response", async () => {
+    const client = httpClient.create();
+
+    server.setResponse({
+      status: 999,
+      headers: { myRequestHeader: "my value" },
+      body: "my-body",
+    });
+
+    const response = await client.requestAsync({
+      host: HOST,
+      port: PORT,
+      method: "POST",
+      headers: { myRequestHeader: "my value" },
+      path: "/my-path",
+      body: "my-body",
+    });
+    expect(server.getLastRequest()).toEqual({
+      method: "POST",
+      headers: { myrequestheader: "my value" },
+      path: "/my-path",
+      body: "my-body",
+    });
+
+    expect(response).toEqual({
+      status: 999,
+      headers: { myrequestheader: "my value" },
+      body: "my-body",
+    });
   });
 });
