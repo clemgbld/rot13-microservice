@@ -1,6 +1,22 @@
 import console from "console";
 import http from "http";
 
+interface Request {
+  host: string;
+  port: number;
+  method: string;
+  headers: Record<string, string>;
+  path: string;
+  body: string;
+}
+
+interface LastRequest {
+  method: string;
+  body: string;
+  path: string;
+  headers: http.IncomingHttpHeaders;
+}
+
 const HOST = "localhost";
 const PORT = 3274;
 
@@ -45,32 +61,45 @@ const createSpyServer = () => {
   };
 };
 
+const requestAsync = async ({
+  host,
+  port,
+  method,
+  headers,
+  path,
+  body,
+}: Request) =>
+  await new Promise((resolve, reject) => {
+    const request = http.request({
+      host,
+      port,
+      method,
+      headers,
+      path,
+    });
+
+    request.end(body);
+
+    request.on("response", (res) => {
+      res.resume();
+
+      resolve("response");
+    });
+  });
+
 describe("HTTP client", () => {
   it("should ", async () => {
     const server = createSpyServer();
     await server.startAsync();
-    const host = HOST;
-    const port = PORT;
-    const method = "POST";
-    const headers = { myRequestheader: "my value" };
-    const path = "/my-path";
+
     try {
-      await new Promise((resolve, reject) => {
-        const request = http.request({
-          host,
-          port,
-          method,
-          headers,
-          path,
-        });
-
-        request.end("my request body");
-
-        request.on("response", (res) => {
-          res.resume();
-
-          resolve("response");
-        });
+      await requestAsync({
+        host: HOST,
+        port: PORT,
+        method: "POST",
+        headers: { myRequestheader: "my value" },
+        path: "/my-path",
+        body: "my-body",
       });
     } finally {
       await server.stopAsync();
