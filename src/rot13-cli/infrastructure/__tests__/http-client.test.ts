@@ -13,7 +13,7 @@ interface LastRequest {
   method?: string;
   body: string;
   path?: string;
-  headers: http.IncomingHttpHeaders;
+  headers?: http.IncomingHttpHeaders;
 }
 
 interface Response {
@@ -133,6 +133,23 @@ describe("HTTP client", () => {
       status: 999,
       headers: { myrequestheader: "my value" },
       body: "my-body",
+    });
+  });
+
+  it("does not require headers and body", async () => {
+    const client = httpClient.create();
+    await client.requestAsync({
+      host: HOST,
+      port: PORT,
+      method: "GET",
+      path: "/my-path",
+    });
+
+    expect(server.getLastRequest()).toEqual({
+      method: "GET",
+      path: "/my-path",
+      headers: {},
+      body: "",
     });
   });
 });

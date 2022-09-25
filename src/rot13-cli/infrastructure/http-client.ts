@@ -4,9 +4,9 @@ interface Request {
   host: string;
   port: number;
   method: string;
-  headers: Record<string, string>;
+  headers?: Record<string, string>;
   path: string;
-  body: string;
+  body?: string;
 }
 
 const withHttpClient = () => ({
