@@ -1,4 +1,3 @@
-import console from "console";
 import http from "http";
 
 interface Request {
@@ -11,9 +10,9 @@ interface Request {
 }
 
 interface LastRequest {
-  method: string;
+  method?: string;
   body: string;
-  path: string;
+  path?: string;
   headers: http.IncomingHttpHeaders;
 }
 
@@ -22,6 +21,7 @@ const PORT = 3274;
 
 const createSpyServer = () => {
   const server = http.createServer();
+  let lastRequest: LastRequest;
   return {
     startAsync: async () =>
       new Promise((resolve, reject) => {
@@ -40,10 +40,18 @@ const createSpyServer = () => {
           });
 
           req.on("end", () => {
-            console.log(req.method);
-            console.log(req.headers);
-            console.log(body);
-            console.log("send response");
+            const headers = { ...req.headers };
+
+            delete headers.connection;
+            delete headers["content-length"];
+            delete headers.host;
+
+            lastRequest = {
+              path: req.url,
+              method: req.method,
+              headers,
+              body,
+            };
 
             res.end();
           });
@@ -58,6 +66,7 @@ const createSpyServer = () => {
         server.once("close", () => resolve("close"));
         server.close();
       }),
+    getLastRequest: () => lastRequest,
   };
 };
 
@@ -88,7 +97,7 @@ const requestAsync = async ({
   });
 
 describe("HTTP client", () => {
-  it("should ", async () => {
+  it("performs request", async () => {
     const server = createSpyServer();
     await server.startAsync();
 
@@ -97,7 +106,13 @@ describe("HTTP client", () => {
         host: HOST,
         port: PORT,
         method: "POST",
-        headers: { myRequestheader: "my value" },
+        headers: { myRequestHeader: "my value" },
+        path: "/my-path",
+        body: "my-body",
+      });
+      expect(server.getLastRequest()).toEqual({
+        method: "POST",
+        headers: { myrequestheader: "my value" },
         path: "/my-path",
         body: "my-body",
       });
