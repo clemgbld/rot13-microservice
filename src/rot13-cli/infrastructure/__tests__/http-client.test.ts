@@ -71,7 +71,6 @@ const createSpyServer = () => {
 
     stopAsync: async () =>
       new Promise((resolve, reject) => {
-        console.log("stopping server");
         server.once("close", () => resolve("close"));
         server.close();
       }),
