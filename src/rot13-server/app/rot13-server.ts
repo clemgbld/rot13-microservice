@@ -1,4 +1,4 @@
-import { CommandLine } from "../infrastructure/command-line";
+import { CommandLine } from "../../infrastructure/command-line";
 import { RequestAdapter } from "../infrastructure/http-request";
 import { HttpServer } from "../infrastructure/http-server";
 import { routeAsync } from "../routing/rot13-router";

@@ -1,6 +1,6 @@
 import http from "http";
 import { pipe } from "ramda";
-import { buildInfrastructure } from "./utils/buildInfrastructure";
+import { buildInfrastructure } from "../../infrastructure/utils/buildInfrastructure";
 import EventEmitter from "events";
 export interface HttpRequest {
   url: string;

@@ -1,6 +1,6 @@
 import { log } from "../log";
-import { commandLine, nullProcess } from "../command-line";
-import { clock } from "../clock";
+import { commandLine, nullProcess } from "../../../infrastructure/command-line";
+import { clock } from "../../../infrastructure/clock";
 
 describe("log", () => {
   const createLogger = () => {

@@ -1,8 +1,8 @@
-import { commandLine, nullProcess } from "../command-line";
-import { clock } from "../clock";
+import { commandLine, nullProcess } from "../../../infrastructure/command-line";
+import { clock } from "../../../infrastructure/clock";
 import { log } from "../log";
 import { httpServer } from "../http-server";
-import { requestAsync } from "../../test-helper/helper";
+import { requestAsync } from "../../../test-helper/helper";
 import { httpRequest, RequestAdapter } from "../http-request";
 const PORT = 3148;
 

@@ -1,8 +1,8 @@
 import EventEmitter from "events";
 import { pipe } from "ramda";
-import { CommandLine } from "./command-line";
-import { Clock } from "./clock";
-import { trackOutput } from "./utils/trackOutput";
+import { CommandLine } from "../../infrastructure/command-line";
+import { Clock } from "../../infrastructure/clock";
+import { trackOutput } from "../../infrastructure/utils/trackOutput";
 
 const OUTPUT_EVENT = "OUTPUT_EVENT";
 

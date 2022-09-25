@@ -1,6 +1,6 @@
 import { httpServer } from "../../infrastructure/http-server";
-import { commandLine, nullProcess } from "../../infrastructure/command-line";
-import { clock } from "../../infrastructure/clock";
+import { commandLine, nullProcess } from "../../../infrastructure/command-line";
+import { clock } from "../../../infrastructure/clock";
 import { log } from "../../infrastructure/log";
 import { httpRequest } from "../../infrastructure/http-request";
 import { rot13 } from "../../core/rot13";

@@ -1,7 +1,7 @@
 import http from "http";
 import { log } from "../log";
-import { commandLine, nullProcess } from "../command-line";
-import { clock } from "../clock";
+import { commandLine, nullProcess } from "../../../infrastructure/command-line";
+import { clock } from "../../../infrastructure/clock";
 import { httpServer, HttpServer, OnRequestAsync } from "../http-server";
 import {
   DependancyHttpRequest,

@@ -1,7 +1,7 @@
 import EventEmitter from "events";
 import http from "http";
 import { httpRequest } from "./http-request";
-import { buildInfrastructure } from "./utils/buildInfrastructure";
+import { buildInfrastructure } from "../../infrastructure/utils/buildInfrastructure";
 import { RequestAdapter } from "./http-request";
 
 class NullNodeServer extends EventEmitter {
