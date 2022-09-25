@@ -106,5 +106,10 @@
     "skipLibCheck": true /* Skip type checking all .d.ts files. */
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "build/**/*"]
+  "exclude": [
+    "node_modules",
+    "build/**/*",
+    "typings/browser.d.ts",
+    "typings/browser"
+  ]
 }

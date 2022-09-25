@@ -16,7 +16,7 @@ interface LastRequest {
   headers?: http.IncomingHttpHeaders;
 }
 
-interface Response {
+export interface Response {
   status: number;
   headers: Record<string, string>;
   body?: string;
@@ -150,6 +150,70 @@ describe("HTTP client", () => {
       path: "/my-path",
       headers: {},
       body: "",
+    });
+  });
+
+  describe("nullability", () => {
+    const IRELEVENAT_REQUEST = {
+      host: HOST,
+      port: PORT,
+      method: "GET",
+      path: "/my-path",
+    };
+    it("does not talk to network", async () => {
+      const client = httpClient.createNull();
+      await client.requestAsync(IRELEVENAT_REQUEST);
+
+      expect(server.getLastRequest()).toBe(null);
+    });
+
+    it("provides a default response", async () => {
+      const client = httpClient.createNull();
+
+      const response = await client.requestAsync(IRELEVENAT_REQUEST);
+
+      expect(response).toEqual({
+        status: 503,
+        headers: { NullHttpClient: "default-header" },
+        body: "Null http client response",
+      });
+    });
+
+    it("provides multiple responses from multiple endpoints", async () => {
+      const client = httpClient.createNull({
+        "/endpoint/1": [
+          { status: 200, headers: { myHeader: "my value" }, body: "body" },
+          { status: 400 },
+        ],
+        "/endpoint/2": [{ status: 301, body: "endpoint 2 body" }],
+      });
+
+      const response1A = await client.requestAsync({
+        host: HOST,
+        port: PORT,
+        method: "GET",
+        path: "/endpoint/1",
+      });
+
+      const response2B = await client.requestAsync({
+        host: HOST,
+        port: PORT,
+        method: "GET",
+        path: "/endpoint/1",
+      });
+
+      const response2A = await client.requestAsync({
+        host: HOST,
+        port: PORT,
+        method: "GET",
+        path: "/endpoint/2",
+      });
+
+      expect(response1A).toEqual({
+        status: 200,
+        headers: { myHeader: "my value" },
+        body: "body",
+      });
     });
   });
 });
