@@ -15,7 +15,6 @@ export const routeAsync = async (request: RequestAdapter) => {
   if (request.pathName !== "/rot-13/transform") return notFound();
   if (request.method !== "POST") return methodNotAllowed();
   if (!request.hasContentType("application/json")) return invalidContentType();
-
   const input = await request.readBodyAsync();
   const jsonString = input;
 

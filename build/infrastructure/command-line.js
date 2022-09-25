@@ -1,6 +1,12 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.commandLine = exports.nullProcess = void 0;
+const events_1 = __importDefault(require("events"));
+const trackOutput_1 = require("./utils/trackOutput");
+const STDOUT_EVENT = "stdout";
 const nullProcess = (args = []) => ({
     stdout: {
         write: (text) => { },
@@ -9,15 +15,15 @@ const nullProcess = (args = []) => ({
 });
 exports.nullProcess = nullProcess;
 const commandLine = (process) => {
-    let lastOutpout;
+    const emitter = new events_1.default();
     return {
         writeOutpout: (text) => {
             const outpout = `${text}\n`;
             process.stdout.write(outpout);
-            lastOutpout = outpout;
+            emitter.emit(STDOUT_EVENT, outpout);
         },
         args: () => process.argv.slice(2),
-        getLastOutpout: () => lastOutpout,
+        trackStdout: () => (0, trackOutput_1.trackOutput)(emitter, STDOUT_EVENT),
     };
 };
 exports.commandLine = commandLine;

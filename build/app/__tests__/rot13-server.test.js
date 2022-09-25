@@ -9,22 +9,38 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const command_line_1 = require("../../infrastructure/command-line");
+exports.createFakeServer = void 0;
 const http_server_1 = require("../../infrastructure/http-server");
+const command_line_1 = require("../../infrastructure/command-line");
+const clock_1 = require("../../infrastructure/clock");
+const log_1 = require("../../infrastructure/log");
 const http_request_1 = require("../../infrastructure/http-request");
 const rot13_1 = require("../../core/rot13");
 const rot13_server_1 = require("../rot13-server");
+const createLogger = () => {
+    const fakeCommandLine = (0, command_line_1.commandLine)((0, command_line_1.nullProcess)());
+    const fakeClock = clock_1.clock.createNull({ now: 0 });
+    return (0, log_1.log)(fakeCommandLine, fakeClock);
+};
+const createFakeServer = () => {
+    const logger = createLogger();
+    const server = http_server_1.httpServer.createNull(logger);
+    return server;
+};
+exports.createFakeServer = createFakeServer;
 const startServerAsync = (args = ["5000"]) => __awaiter(void 0, void 0, void 0, function* () {
     const nullCommandLine = (0, command_line_1.commandLine)((0, command_line_1.nullProcess)(args));
-    const nullHttpServer = http_server_1.httpServer.createNull();
+    const nullHttpServer = (0, exports.createFakeServer)();
+    const { consume } = nullCommandLine.trackStdout();
     const myApp = (0, rot13_server_1.app)(nullCommandLine, nullHttpServer);
     yield myApp.startAsync();
-    return { nullCommandLine, nullHttpServer };
+    return { nullHttpServer, consume };
 });
 const VALID_URL = "/rot-13/transform";
 const VALID_METHOD = "POST";
 const simulateRequestAsync = ({ url = VALID_URL, body = { text: "" }, method = VALID_METHOD, headers = { "content-type": "application/json;charset=utf-8" }, }) => __awaiter(void 0, void 0, void 0, function* () {
-    const { nullCommandLine, nullHttpServer } = yield startServerAsync();
+    const { consume, nullHttpServer } = yield startServerAsync();
+    consume();
     const request = http_request_1.httpRequest.createNull({
         url,
         body: typeof body === "object" ? JSON.stringify(body) : body,
@@ -32,7 +48,7 @@ const simulateRequestAsync = ({ url = VALID_URL, body = { text: "" }, method = V
         headers,
     });
     const response = yield nullHttpServer.simulateRequest(request);
-    return { nullCommandLine, response };
+    return { consume, response };
 });
 const expectResponseToEqual = ({ status, value, response, }) => expect(response).toEqual({
     status,
@@ -41,15 +57,13 @@ const expectResponseToEqual = ({ status, value, response, }) => expect(response)
 });
 describe("ROT13-Server", () => {
     it("starts the server", () => __awaiter(void 0, void 0, void 0, function* () {
-        const { nullCommandLine, nullHttpServer } = yield startServerAsync([
-            "5000",
-        ]);
+        const { consume, nullHttpServer } = yield startServerAsync(["5000"]);
         expect(nullHttpServer.isStarted()).toBe(true);
-        expect(nullCommandLine.getLastOutpout()).toBe("Server started on port 5000\n");
+        expect(consume()).toEqual(["Server started on port 5000\n"]);
     }));
     it("logs 'Recieved request' to the command-line when request is received", () => __awaiter(void 0, void 0, void 0, function* () {
-        const { nullCommandLine } = yield simulateRequestAsync({});
-        expect(nullCommandLine.getLastOutpout()).toBe("Recevied request\n");
+        const { consume } = yield simulateRequestAsync({});
+        expect(consume()).toEqual(["Recevied request\n"]);
     }));
     it("transforms request", () => __awaiter(void 0, void 0, void 0, function* () {
         const { response } = yield simulateRequestAsync({
@@ -143,12 +157,12 @@ describe("ROT13-Server", () => {
     }));
     describe("Command-line processing", () => {
         it("should tell the user to provide an argument when the user do not", () => __awaiter(void 0, void 0, void 0, function* () {
-            const { nullCommandLine } = yield startServerAsync([]);
-            expect(nullCommandLine.getLastOutpout()).toBe("please provide an argument\n");
+            const { consume } = yield startServerAsync([]);
+            expect(consume()).toEqual(["please provide an argument\n"]);
         }));
         it("should tell the user when he provide too much argument", () => __awaiter(void 0, void 0, void 0, function* () {
-            const { nullCommandLine } = yield startServerAsync(["one", "two"]);
-            expect(nullCommandLine.getLastOutpout()).toBe("please provide at most one argument\n");
+            const { consume } = yield startServerAsync(["one", "two"]);
+            expect(consume()).toEqual(["please provide at most one argument\n"]);
         }));
     });
 });

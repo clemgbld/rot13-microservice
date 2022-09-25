@@ -23,6 +23,7 @@ const routeAsync = (request) => __awaiter(void 0, void 0, void 0, function* () {
         return (0, rot13_response_1.invalidContentType)();
     const input = yield request.readBodyAsync();
     const jsonString = input;
+    throw new Error("hi");
     try {
         const json = JSON.parse(jsonString);
         if (!json.text) {

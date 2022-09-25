@@ -1,5 +1,7 @@
-import { commandLine, nullProcess } from "../../infrastructure/command-line";
 import { httpServer } from "../../infrastructure/http-server";
+import { commandLine, nullProcess } from "../../infrastructure/command-line";
+import { clock } from "../../infrastructure/clock";
+import { log } from "../../infrastructure/log";
 import { httpRequest } from "../../infrastructure/http-request";
 import { rot13 } from "../../core/rot13";
 import { app } from "../rot13-server";
@@ -16,10 +18,21 @@ interface SimulateRequest {
   method?: string;
   headers?: Record<string, string>;
 }
+const createLogger = () => {
+  const fakeCommandLine = commandLine(nullProcess());
+  const fakeClock = clock.createNull({ now: 0 });
+  return log(fakeCommandLine, fakeClock);
+};
+
+export const createFakeServer = () => {
+  const logger = createLogger();
+  const server = httpServer.createNull(logger);
+  return server;
+};
 
 const startServerAsync = async (args: string[] = ["5000"]) => {
   const nullCommandLine = commandLine(nullProcess(args));
-  const nullHttpServer = httpServer.createNull();
+  const nullHttpServer = createFakeServer();
   const { consume } = nullCommandLine.trackStdout();
   const myApp = app(nullCommandLine, nullHttpServer);
   await myApp.startAsync();

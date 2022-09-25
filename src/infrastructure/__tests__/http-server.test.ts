@@ -1,11 +1,33 @@
 import http from "http";
+import { log } from "../log";
+import { commandLine, nullProcess } from "../command-line";
+import { clock } from "../clock";
 import { httpServer, HttpServer, OnRequestAsync } from "../http-server";
 import {
   DependancyHttpRequest,
   httpRequest,
   RequestAdapter,
 } from "../http-request";
-const PORT = 5537;
+const PORT = 3002;
+
+const createLogger = () => {
+  const fakeCommandLine = commandLine(nullProcess());
+  const fakeClock = clock.createNull({ now: 0 });
+  return log(fakeCommandLine, fakeClock);
+};
+
+const createServer = () => {
+  const logger = createLogger();
+  const server = httpServer.create(logger);
+  const { outpouts } = logger.trackOutput();
+  return { server, outpouts };
+};
+
+export const createFakeServer = () => {
+  const logger = createLogger();
+  const server = httpServer.createNull(logger);
+  return server;
+};
 
 const startAsync = async (
   server: HttpServer,
@@ -25,19 +47,19 @@ const startAndStopAsync = async (server: HttpServer) => {
 
 const finallyStartAndStopAsync = async (
   options: OnRequestAsync,
-  fnAysync: (server: HttpServer) => any
+  fnAysync: (server: HttpServer, outpouts: any) => any
 ) => {
-  const server = httpServer.create();
+  const { server, outpouts } = createServer();
   await startAsync(server, options);
   try {
-    return await fnAysync(server);
+    return await fnAysync(server, outpouts);
   } finally {
     await stopAsync(server);
   }
 };
 
 const getAsync = async ({ onRequestAsync }: { onRequestAsync: any }) =>
-  await finallyStartAndStopAsync(onRequestAsync, async () => {
+  await finallyStartAndStopAsync(onRequestAsync, async (_, outpouts: any) => {
     return await new Promise((resolve, reject) => {
       const request = http.get({ port: PORT });
       request.on("response", (response) => {
@@ -54,9 +76,12 @@ const getAsync = async ({ onRequestAsync }: { onRequestAsync: any }) =>
           delete headers.date;
 
           resolve({
-            status: response.statusCode,
-            body,
-            headers: headers,
+            response: {
+              status: response.statusCode,
+              body,
+              headers: headers,
+            },
+            outpouts,
           });
         });
       });
@@ -65,7 +90,7 @@ const getAsync = async ({ onRequestAsync }: { onRequestAsync: any }) =>
 
 describe("HTTP Server", () => {
   it("says when server is started", async () => {
-    const server = httpServer.create();
+    const { server } = createServer();
     expect(server.isStarted()).toBe(false);
     await startAsync(server);
     try {
@@ -80,7 +105,7 @@ describe("HTTP Server", () => {
     await finallyStartAndStopAsync(
       async () => ({ status: 200, headers: {}, body: "" }),
       async (_) => {
-        const server = httpServer.create();
+        const { server } = createServer();
         await expect(async () => await startAsync(server)).rejects.toThrowError(
           /^Couldn't start server due to error: listen EADDRINUSE:/
         );
@@ -89,7 +114,7 @@ describe("HTTP Server", () => {
   });
 
   it("starts and stops the server (and should be able to do so multiple times)", async () => {
-    const server = httpServer.create();
+    const { server } = createServer();
     await startAndStopAsync(server);
     await startAndStopAsync(server);
   });
@@ -119,7 +144,7 @@ describe("HTTP Server", () => {
       const onRequestAsync = (request: DependancyHttpRequest) => {
         return expectedResponse;
       };
-      const response = await getAsync({ onRequestAsync });
+      const { response } = await getAsync({ onRequestAsync });
 
       expect(response).toEqual(expectedResponse);
     });
@@ -140,7 +165,7 @@ describe("HTTP Server", () => {
         actualRequest = request;
         return expectedResponse;
       };
-      const server = httpServer.createNull();
+      const server = createFakeServer();
       await startAsync(server, onRequestAsync);
       const response = await server.simulateRequest(expectedRequest);
       expect(response).toEqual(expectedResponse);
@@ -148,17 +173,25 @@ describe("HTTP Server", () => {
     });
 
     it("fails fast when we simulate the request before starting the null server", async () => {
-      const server = httpServer.createNull();
+      const server = createFakeServer();
       expect(() => server.simulateRequest()).rejects.toThrow(
         "Could not simulate the request before starting the server"
       );
     });
 
-    it("fails gracefully when request handler throw exception", async () => {
+    it("fails gracefully when request handler throw exception and log an emergency output", async () => {
       const onRequestAsync = () => {
         throw new Error("onRequestAsync error");
       };
-      const response = await getAsync({ onRequestAsync });
+      const { response, outpouts } = await getAsync({ onRequestAsync });
+
+      expect(outpouts).toEqual([
+        {
+          alert: "emergency",
+          message: "request handler threw exception",
+          error: new Error("onRequestAsync error"),
+        },
+      ]);
 
       expect(response).toEqual({
         status: 500,
@@ -169,7 +202,7 @@ describe("HTTP Server", () => {
   });
 
   it("fails fast when server is stopped when it is not running", async () => {
-    const server = httpServer.create();
+    const { server } = createServer();
     await expect(async () => await stopAsync(server)).rejects.toThrow(
       "Can't stop server because it is not running"
     );
@@ -178,8 +211,8 @@ describe("HTTP Server", () => {
 
 describe("nullability", () => {
   it("does not actually start or stop the server", async () => {
-    const server = httpServer.createNull();
-    const server2 = httpServer.createNull();
+    const server = createFakeServer();
+    const server2 = createFakeServer();
     await startAsync(server);
     expect(async () => await startAsync(server2)).not.toThrow();
     await stopAsync(server);

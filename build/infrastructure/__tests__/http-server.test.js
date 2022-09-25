@@ -12,10 +12,31 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.createFakeServer = void 0;
 const http_1 = __importDefault(require("http"));
+const log_1 = require("../log");
+const command_line_1 = require("../command-line");
+const clock_1 = require("../clock");
 const http_server_1 = require("../http-server");
 const http_request_1 = require("../http-request");
-const PORT = 5537;
+const PORT = 3002;
+const createLogger = () => {
+    const fakeCommandLine = (0, command_line_1.commandLine)((0, command_line_1.nullProcess)());
+    const fakeClock = clock_1.clock.createNull({ now: 0 });
+    return (0, log_1.log)(fakeCommandLine, fakeClock);
+};
+const createServer = () => {
+    const logger = createLogger();
+    const server = http_server_1.httpServer.create(logger);
+    const { outpouts } = logger.trackOutput();
+    return { server, outpouts };
+};
+const createFakeServer = () => {
+    const logger = createLogger();
+    const server = http_server_1.httpServer.createNull(logger);
+    return server;
+};
+exports.createFakeServer = createFakeServer;
 const startAsync = (server, onRequestAsync = () => __awaiter(void 0, void 0, void 0, function* () {
     return ({
         status: 200,
@@ -29,17 +50,17 @@ const startAndStopAsync = (server) => __awaiter(void 0, void 0, void 0, function
     yield stopAsync(server);
 });
 const finallyStartAndStopAsync = (options, fnAysync) => __awaiter(void 0, void 0, void 0, function* () {
-    const server = http_server_1.httpServer.create();
+    const { server, outpouts } = createServer();
     yield startAsync(server, options);
     try {
-        return yield fnAysync(server);
+        return yield fnAysync(server, outpouts);
     }
     finally {
         yield stopAsync(server);
     }
 });
 const getAsync = ({ onRequestAsync }) => __awaiter(void 0, void 0, void 0, function* () {
-    return yield finallyStartAndStopAsync(onRequestAsync, () => __awaiter(void 0, void 0, void 0, function* () {
+    return yield finallyStartAndStopAsync(onRequestAsync, (_, outpouts) => __awaiter(void 0, void 0, void 0, function* () {
         return yield new Promise((resolve, reject) => {
             const request = http_1.default.get({ port: PORT });
             request.on("response", (response) => {
@@ -54,9 +75,12 @@ const getAsync = ({ onRequestAsync }) => __awaiter(void 0, void 0, void 0, funct
                     delete headers["content-length"];
                     delete headers.date;
                     resolve({
-                        status: response.statusCode,
-                        body,
-                        headers: headers,
+                        response: {
+                            status: response.statusCode,
+                            body,
+                            headers: headers,
+                        },
+                        outpouts,
                     });
                 });
             });
@@ -65,7 +89,7 @@ const getAsync = ({ onRequestAsync }) => __awaiter(void 0, void 0, void 0, funct
 });
 describe("HTTP Server", () => {
     it("says when server is started", () => __awaiter(void 0, void 0, void 0, function* () {
-        const server = http_server_1.httpServer.create();
+        const { server } = createServer();
         expect(server.isStarted()).toBe(false);
         yield startAsync(server);
         try {
@@ -78,12 +102,12 @@ describe("HTTP Server", () => {
     }));
     it("fails gracefully when server has startup error", () => __awaiter(void 0, void 0, void 0, function* () {
         yield finallyStartAndStopAsync(() => __awaiter(void 0, void 0, void 0, function* () { return ({ status: 200, headers: {}, body: "" }); }), (_) => __awaiter(void 0, void 0, void 0, function* () {
-            const server = http_server_1.httpServer.create();
+            const { server } = createServer();
             yield expect(() => __awaiter(void 0, void 0, void 0, function* () { return yield startAsync(server); })).rejects.toThrowError(/^Couldn't start server due to error: listen EADDRINUSE:/);
         }));
     }));
     it("starts and stops the server (and should be able to do so multiple times)", () => __awaiter(void 0, void 0, void 0, function* () {
-        const server = http_server_1.httpServer.create();
+        const { server } = createServer();
         yield startAndStopAsync(server);
         yield startAndStopAsync(server);
     }));
@@ -105,7 +129,7 @@ describe("HTTP Server", () => {
             const onRequestAsync = (request) => {
                 return expectedResponse;
             };
-            const response = yield getAsync({ onRequestAsync });
+            const { response } = yield getAsync({ onRequestAsync });
             expect(response).toEqual(expectedResponse);
         }));
         it("simulates request", () => __awaiter(void 0, void 0, void 0, function* () {
@@ -123,21 +147,28 @@ describe("HTTP Server", () => {
                 actualRequest = request;
                 return expectedResponse;
             });
-            const server = http_server_1.httpServer.createNull();
+            const server = (0, exports.createFakeServer)();
             yield startAsync(server, onRequestAsync);
             const response = yield server.simulateRequest(expectedRequest);
             expect(response).toEqual(expectedResponse);
             expect(actualRequest).toEqual(expectedRequest);
         }));
         it("fails fast when we simulate the request before starting the null server", () => __awaiter(void 0, void 0, void 0, function* () {
-            const server = http_server_1.httpServer.createNull();
+            const server = (0, exports.createFakeServer)();
             expect(() => server.simulateRequest()).rejects.toThrow("Could not simulate the request before starting the server");
         }));
-        it("fails gracefully when request handler throw exception", () => __awaiter(void 0, void 0, void 0, function* () {
+        it("fails gracefully when request handler throw exception and log an emergency output", () => __awaiter(void 0, void 0, void 0, function* () {
             const onRequestAsync = () => {
                 throw new Error("onRequestAsync error");
             };
-            const response = yield getAsync({ onRequestAsync });
+            const { response, outpouts } = yield getAsync({ onRequestAsync });
+            expect(outpouts).toEqual([
+                {
+                    alert: "emergency",
+                    message: "request handler threw exception",
+                    error: new Error("onRequestAsync error"),
+                },
+            ]);
             expect(response).toEqual({
                 status: 500,
                 headers: { "content-type": "text/plain; charset=utf-8" },
@@ -146,14 +177,14 @@ describe("HTTP Server", () => {
         }));
     });
     it("fails fast when server is stopped when it is not running", () => __awaiter(void 0, void 0, void 0, function* () {
-        const server = http_server_1.httpServer.create();
+        const { server } = createServer();
         yield expect(() => __awaiter(void 0, void 0, void 0, function* () { return yield stopAsync(server); })).rejects.toThrow("Can't stop server because it is not running");
     }));
 });
 describe("nullability", () => {
     it("does not actually start or stop the server", () => __awaiter(void 0, void 0, void 0, function* () {
-        const server = http_server_1.httpServer.createNull();
-        const server2 = http_server_1.httpServer.createNull();
+        const server = (0, exports.createFakeServer)();
+        const server2 = (0, exports.createFakeServer)();
         yield startAsync(server);
         expect(() => __awaiter(void 0, void 0, void 0, function* () { return yield startAsync(server2); })).not.toThrow();
         yield stopAsync(server);

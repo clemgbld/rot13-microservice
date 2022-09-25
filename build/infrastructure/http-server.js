@@ -31,11 +31,16 @@ class NullNodeServer extends events_1.default {
 const nullHttp = {
     createServer: () => new NullNodeServer(),
 };
-const handleRequestAsync = (request, onRequestAsync) => __awaiter(void 0, void 0, void 0, function* () {
+const handleRequestAsync = (request, onRequestAsync, log) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        return onRequestAsync(request);
+        const response = yield onRequestAsync(request);
+        return response;
     }
-    catch (err) {
+    catch (error) {
+        log.emergency({
+            message: "request handler threw exception",
+            error,
+        });
         return {
             status: 500,
             headers: { "content-type": "text/plain; charset=utf-8" },
@@ -43,7 +48,7 @@ const handleRequestAsync = (request, onRequestAsync) => __awaiter(void 0, void 0
         };
     }
 });
-const withHttpServer = (http) => (o) => {
+const withHttpServer = ({ http, log }) => (o) => {
     let fakeOnRequestAsync;
     let server;
     return Object.assign(Object.assign({}, o), { isStarted: () => server !== undefined, startAsync: ({ port, onRequestAsync }) => __awaiter(void 0, void 0, void 0, function* () {
@@ -57,7 +62,7 @@ const withHttpServer = (http) => (o) => {
                     reject(new Error(`Couldn't start server due to error: ${err.message}`));
                 });
                 server.on("request", (nodeRequest, nodeResponse) => __awaiter(void 0, void 0, void 0, function* () {
-                    const { status = 501, body = "", headers = {}, } = yield handleRequestAsync(http_request_1.httpRequest.create(nodeRequest), onRequestAsync);
+                    const { status = 501, body = "", headers = {}, } = yield handleRequestAsync(http_request_1.httpRequest.create(nodeRequest), onRequestAsync, log);
                     nodeResponse.statusCode = status;
                     Object.entries(headers).forEach(([name, value = ""]) => nodeResponse.setHeader(name, value));
                     nodeResponse.end(body);
@@ -78,17 +83,17 @@ const withHttpServer = (http) => (o) => {
             if (!fakeOnRequestAsync) {
                 throw new Error("Could not simulate the request before starting the server");
             }
-            return handleRequestAsync(request, fakeOnRequestAsync);
+            return handleRequestAsync(request, fakeOnRequestAsync, log);
         }) });
 };
 exports.httpServer = {
-    create: () => (0, buildInfrastructure_1.buildInfrastructure)({
-        dependancy: http_1.default,
+    create: (log) => (0, buildInfrastructure_1.buildInfrastructure)({
+        dependancy: { http: http_1.default, log },
         infrastructureObj: exports.httpServer,
         withMixin: withHttpServer,
     }),
-    createNull: () => (0, buildInfrastructure_1.buildInfrastructure)({
-        dependancy: nullHttp,
+    createNull: (log) => (0, buildInfrastructure_1.buildInfrastructure)({
+        dependancy: { http: nullHttp, log },
         infrastructureObj: exports.httpServer,
         withMixin: withHttpServer,
     }),

@@ -1,7 +1,10 @@
+import { commandLine, nullProcess } from "../command-line";
+import { clock } from "../clock";
+import { log } from "../log";
 import { httpServer } from "../http-server";
 import { requestAsync } from "../../test-helper/helper";
 import { httpRequest, RequestAdapter } from "../http-request";
-const PORT = 3517;
+const PORT = 3148;
 
 interface Options {
   url?: string;
@@ -22,8 +25,11 @@ const createRequestAsync = (options: Options, expectFnAsync: ExpectFnAsync) =>
         reject(err);
       }
     };
+    const fakeCommandLine = commandLine(nullProcess());
+    const fakeClock = clock.createNull({ now: 0 });
 
-    const server = httpServer.create();
+    const logger = log(fakeCommandLine, fakeClock);
+    const server = httpServer.create(logger);
 
     await server.startAsync({
       port: PORT,

@@ -21,15 +21,10 @@ const transformErrorinStackTrace = (
   );
 
 const addAlert =
-  (type: string) =>
-  (data: Record<string, string | undefined | Error> | undefined) => ({
+  (type: string) => (data: Record<string, string | undefined | Error>) => ({
     alert: type,
     ...data,
   });
-
-const addAlertInfo = addAlert("info");
-
-const formatLog = pipe(transformErrorinStackTrace, addAlertInfo);
 
 type Logs = Record<
   string,
@@ -53,6 +48,7 @@ export const log = (commandLine: CommandLine, clock: Clock): any => {
     ) =>
     (data: Record<string, string | undefined | Error>) => {
       const time = clock.toFormattedString(options, "en-US");
+      const formatLog = pipe(transformErrorinStackTrace, addAlertFn);
       commandLine.writeOutpout(`${time} ${JSON.stringify(formatLog(data))}`);
       emitter.emit(OUTPUT_EVENT, addAlertFn(data));
     };

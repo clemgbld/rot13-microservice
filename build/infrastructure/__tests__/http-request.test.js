@@ -9,10 +9,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const command_line_1 = require("../command-line");
+const clock_1 = require("../clock");
+const log_1 = require("../log");
 const http_server_1 = require("../http-server");
 const helper_1 = require("../../test-helper/helper");
 const http_request_1 = require("../http-request");
-const PORT = 3517;
+const PORT = 3148;
 const createRequestAsync = (options, expectFnAsync) => new Promise((resolve, reject) => __awaiter(void 0, void 0, void 0, function* () {
     const onRequestAsync = (request) => __awaiter(void 0, void 0, void 0, function* () {
         try {
@@ -23,7 +26,10 @@ const createRequestAsync = (options, expectFnAsync) => new Promise((resolve, rej
             reject(err);
         }
     });
-    const server = http_server_1.httpServer.create();
+    const fakeCommandLine = (0, command_line_1.commandLine)((0, command_line_1.nullProcess)());
+    const fakeClock = clock_1.clock.createNull({ now: 0 });
+    const logger = (0, log_1.log)(fakeCommandLine, fakeClock);
+    const server = http_server_1.httpServer.create(logger);
     yield server.startAsync({
         port: PORT,
         onRequestAsync,
