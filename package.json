@@ -7,6 +7,7 @@
     "start:dev": "nodemon",
     "build": "rimraf ./build && tsc",
     "start": "yarn run build && node build/index.js",
+    "cli": "node build/rot13-cli/index.js",
     "test": "jest",
     "test:watch": "jest --watch"
   },

@@ -105,7 +105,7 @@ describe("HTTP client", () => {
     await server.stopAsync();
   });
 
-  describe.skip("Real implementation", () => {
+  describe("Real implementation", () => {
     it("performs request and returns a response", async () => {
       const client = httpClient.create();
 
