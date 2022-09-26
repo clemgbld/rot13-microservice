@@ -1,7 +1,10 @@
 import http from "http";
 import EventEmitter from "events";
+import { trackOutput } from "../../infrastructure/utils/trackOutput";
 
 type HTTP = typeof http;
+
+const REQUEST_EVENT = "REQUEST_EVENT";
 
 interface Request {
   host: string;
@@ -59,45 +62,67 @@ const nullHttp = (res: ConfigurableResponses) => ({
   request: ({ path }: { path: string }) => new NullRequest(res[path]),
 });
 
-const withHttpClient = (http: HTTP | NullHttp) => ({
-  requestAsync: async ({
-    host,
-    port,
-    method,
-    headers,
-    path,
-    body = "",
-  }: Request) =>
-    await new Promise((resolve, reject) => {
-      const request: any = http.request({
-        host,
-        port,
-        method,
-        headers,
-        path,
-      });
-
-      request.on("response", (res: any) => {
-        const headers = { ...res.headers };
-
-        delete headers.connection;
-        delete headers["content-length"];
-        delete headers.host;
-        delete headers.date;
-
-        let body = "";
-        res.on("data", (chunk = "") => {
-          body += chunk;
-        });
-
-        res.on("end", () => {
-          resolve({ status: res.statusCode, headers, body });
-        });
-      });
-
-      request.end(body);
+const normalizeHeaders = (headers: Record<string, string>) =>
+  Object.entries(headers).reduce(
+    (acc: Record<string, string>, [key, value]) => ({
+      ...acc,
+      [key.toLowerCase()]: value,
     }),
-});
+    {}
+  );
+
+const withHttpClient = (http: HTTP | NullHttp) => {
+  const emitter = new EventEmitter();
+  return {
+    requestAsync: async ({
+      host,
+      port,
+      method,
+      headers = {},
+      path,
+      body = "",
+    }: Request) =>
+      await new Promise((resolve, reject) => {
+        const request: any = http.request({
+          host,
+          port,
+          method,
+          headers,
+          path,
+        });
+
+        emitter.emit(REQUEST_EVENT, {
+          host,
+          port,
+          method: method.toUpperCase(),
+          headers: normalizeHeaders(headers),
+          path,
+        });
+
+        request.on("response", (res: any) => {
+          const headers = { ...res.headers };
+
+          delete headers.connection;
+          delete headers["content-length"];
+          delete headers.host;
+          delete headers.date;
+
+          let body = "";
+          res.on("data", (chunk = "") => {
+            body += chunk;
+          });
+
+          res.on("end", () => {
+            resolve({ status: res.statusCode, headers, body });
+          });
+        });
+
+        request.end(body);
+      }),
+
+    trackRequests: () => trackOutput(emitter, REQUEST_EVENT),
+  };
+};
 
 export const httpClient = {
   create: () => withHttpClient(http),

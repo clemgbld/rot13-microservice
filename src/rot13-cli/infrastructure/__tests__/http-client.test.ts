@@ -105,51 +105,53 @@ describe("HTTP client", () => {
     await server.stopAsync();
   });
 
-  it("performs request and returns a response", async () => {
-    const client = httpClient.create();
+  describe.skip("Real implementation", () => {
+    it("performs request and returns a response", async () => {
+      const client = httpClient.create();
 
-    server.setResponse({
-      status: 999,
-      headers: { myRequestHeader: "my value" },
-      body: "my-body",
+      server.setResponse({
+        status: 999,
+        headers: { myRequestHeader: "my value" },
+        body: "my-body",
+      });
+
+      const response = await client.requestAsync({
+        host: HOST,
+        port: PORT,
+        method: "POST",
+        headers: { myRequestHeader: "my value" },
+        path: "/my-path",
+        body: "my-body",
+      });
+      expect(server.getLastRequest()).toEqual({
+        method: "POST",
+        headers: { myrequestheader: "my value" },
+        path: "/my-path",
+        body: "my-body",
+      });
+
+      expect(response).toEqual({
+        status: 999,
+        headers: { myrequestheader: "my value" },
+        body: "my-body",
+      });
     });
 
-    const response = await client.requestAsync({
-      host: HOST,
-      port: PORT,
-      method: "POST",
-      headers: { myRequestHeader: "my value" },
-      path: "/my-path",
-      body: "my-body",
-    });
-    expect(server.getLastRequest()).toEqual({
-      method: "POST",
-      headers: { myrequestheader: "my value" },
-      path: "/my-path",
-      body: "my-body",
-    });
+    it("does not require headers and body", async () => {
+      const client = httpClient.create();
+      await client.requestAsync({
+        host: HOST,
+        port: PORT,
+        method: "GET",
+        path: "/my-path",
+      });
 
-    expect(response).toEqual({
-      status: 999,
-      headers: { myrequestheader: "my value" },
-      body: "my-body",
-    });
-  });
-
-  it("does not require headers and body", async () => {
-    const client = httpClient.create();
-    await client.requestAsync({
-      host: HOST,
-      port: PORT,
-      method: "GET",
-      path: "/my-path",
-    });
-
-    expect(server.getLastRequest()).toEqual({
-      method: "GET",
-      path: "/my-path",
-      headers: {},
-      body: "",
+      expect(server.getLastRequest()).toEqual({
+        method: "GET",
+        path: "/my-path",
+        headers: {},
+        body: "",
+      });
     });
   });
 
@@ -226,6 +228,29 @@ describe("HTTP client", () => {
         body: "endpoint 2 body",
         headers: {},
       });
+    });
+
+    it("tracks request", async () => {
+      const client = httpClient.createNull();
+      const { outpouts: requests } = client.trackRequests();
+      await client.requestAsync({
+        host: HOST,
+        port: PORT,
+        method: "post",
+        headers: { myHeAders: "my value" },
+        body: "my body",
+        path: "/my-path",
+      });
+
+      expect(requests).toEqual([
+        {
+          host: HOST,
+          port: PORT,
+          method: "POST",
+          headers: { myheaders: "my value" },
+          path: "/my-path",
+        },
+      ]);
     });
   });
 });
