@@ -183,7 +183,7 @@ describe("HTTP client", () => {
       const client = httpClient.createNull({
         "/endpoint/1": [
           { status: 200, headers: { myHeader: "my value" }, body: "body" },
-          { status: 400 },
+          { status: 404 },
         ],
         "/endpoint/2": [{ status: 301, body: "endpoint 2 body" }],
       });
@@ -195,7 +195,7 @@ describe("HTTP client", () => {
         path: "/endpoint/1",
       });
 
-      const response2B = await client.requestAsync({
+      const response1B = await client.requestAsync({
         host: HOST,
         port: PORT,
         method: "GET",
@@ -213,6 +213,18 @@ describe("HTTP client", () => {
         status: 200,
         headers: { myHeader: "my value" },
         body: "body",
+      });
+
+      expect(response1B).toEqual({
+        status: 404,
+        headers: {},
+        body: "",
+      });
+
+      expect(response2A).toEqual({
+        status: 301,
+        body: "endpoint 2 body",
+        headers: {},
       });
     });
   });

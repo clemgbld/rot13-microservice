@@ -47,7 +47,7 @@ class NullRequest extends EventEmitter {
     super();
   }
 
-  end(str: string) {
+  end(_: string) {
     setImmediate(() => {
       this.emit("response", new NullResponse(this._res.shift()));
     });
@@ -60,7 +60,14 @@ const nullHttp = (res: ConfigurableResponses) => ({
 });
 
 const withHttpClient = (http: HTTP | NullHttp) => ({
-  requestAsync: async ({ host, port, method, headers, path, body }: Request) =>
+  requestAsync: async ({
+    host,
+    port,
+    method,
+    headers,
+    path,
+    body = "",
+  }: Request) =>
     await new Promise((resolve, reject) => {
       const request: any = http.request({
         host,
@@ -79,7 +86,7 @@ const withHttpClient = (http: HTTP | NullHttp) => ({
         delete headers.date;
 
         let body = "";
-        res.on("data", (chunk: string) => {
+        res.on("data", (chunk = "") => {
           body += chunk;
         });
 
