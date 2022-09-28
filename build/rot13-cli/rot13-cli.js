@@ -37,23 +37,32 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.runAsync = void 0;
-var runAsync = function (commandLine) { return __awaiter(void 0, void 0, void 0, function () {
-    var args;
+var runAsync = function (commandLine, rot13Client) { return __awaiter(void 0, void 0, void 0, function () {
+    var args, port, text, response, err_1;
     return __generator(this, function (_a) {
-        args = commandLine.args();
-        if (args.length !== 2)
-            return [2 /*return*/, commandLine.writeOutpout("please provide 2 arguments")];
-        commandLine.writeOutpout("TODO");
-        return [2 /*return*/];
+        switch (_a.label) {
+            case 0:
+                args = commandLine.args();
+                if (args.length !== 2)
+                    return [2 /*return*/, commandLine.writeOutpout("please provide 2 arguments")];
+                port = args[0], text = args[1];
+                if (Number.isNaN(+port)) {
+                    return [2 /*return*/, commandLine.writeOutpout("please provide a valid port as first argument")];
+                }
+                _a.label = 1;
+            case 1:
+                _a.trys.push([1, 3, , 4]);
+                return [4 /*yield*/, rot13Client.transformAsync(+port, text)];
+            case 2:
+                response = _a.sent();
+                commandLine.writeOutpout(response);
+                return [3 /*break*/, 4];
+            case 3:
+                err_1 = _a.sent();
+                commandLine.writeOutpout(err_1.message);
+                return [3 /*break*/, 4];
+            case 4: return [2 /*return*/];
+        }
     });
 }); };
 exports.runAsync = runAsync;
-// export const runAsync = async (commandLine: CommandLine, rot13Client) => {
-//   const args = commandLine.args();
-//   if (args.length !== 2)
-//     return commandLine.writeOutpout("please provide 2 arguments");
-//   const [port, text] = args;
-//   const response = await rot13Client.transformAsync(port, text);
-//   commandLine.writeOutpout(response);
-//   commandLine.writeOutpout("TODO");
-// };

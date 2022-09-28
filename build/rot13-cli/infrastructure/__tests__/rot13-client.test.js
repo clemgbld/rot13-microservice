@@ -36,37 +36,39 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.createClient = void 0;
 var rot13_client_1 = require("../rot13-client");
 var http_client_1 = require("../http-client");
+var VALID_TRANSFORME_TEXT = "transformed_text";
+var HOST = "localhost";
+var IRRELEVANT_PORT = 45;
+var IRRELEVENAT_TEXT = "irrrelevant text";
+var VALID_STATUS = 200;
+var VALID_HEADERS = { "content-type": "application/json" };
+var VALID_BODY = JSON.stringify({ transformed: VALID_TRANSFORME_TEXT });
+var createClient = function (_a) {
+    var _b = _a.status, status = _b === void 0 ? VALID_STATUS : _b, _c = _a.headers, headers = _c === void 0 ? VALID_HEADERS : _c, _d = _a.body, body = _d === void 0 ? VALID_BODY : _d;
+    var client = http_client_1.httpClient.createNull({
+        "/rot-13/transform": [
+            {
+                status: status,
+                headers: headers,
+                body: body,
+            },
+        ],
+    });
+    var requests = client.trackRequests().outpouts;
+    return { client: client, requests: requests };
+};
+exports.createClient = createClient;
 describe("rot13 service client", function () {
-    var VALID_TRANSFORME_TEXT = "transformed_text";
-    var HOST = "localhost";
-    var IRRELEVANT_PORT = 45;
-    var IRRELEVENAT_TEXT = "irrrelevant text";
-    var VALID_STATUS = 200;
-    var VALID_HEADERS = { "content-type": "application/json" };
-    var VALID_BODY = JSON.stringify({ transformed: VALID_TRANSFORME_TEXT });
-    var createClient = function (_a) {
-        var _b = _a.status, status = _b === void 0 ? VALID_STATUS : _b, _c = _a.headers, headers = _c === void 0 ? VALID_HEADERS : _c, _d = _a.body, body = _d === void 0 ? VALID_BODY : _d;
-        var client = http_client_1.httpClient.createNull({
-            "/rot-13/transform": [
-                {
-                    status: status,
-                    headers: headers,
-                    body: body,
-                },
-            ],
-        });
-        var requests = client.trackRequests().outpouts;
-        return { client: client, requests: requests };
-    };
     describe("Happy path", function () {
         it("make request", function () { return __awaiter(void 0, void 0, void 0, function () {
             var _a, client, requests, rot13Client;
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
-                        _a = createClient({
+                        _a = (0, exports.createClient)({
                             status: VALID_STATUS,
                             headers: VALID_HEADERS,
                             body: VALID_BODY,
@@ -94,7 +96,7 @@ describe("rot13 service client", function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        client = createClient({
+                        client = (0, exports.createClient)({
                             status: VALID_STATUS,
                             headers: VALID_HEADERS,
                             body: VALID_BODY,
@@ -110,20 +112,103 @@ describe("rot13 service client", function () {
         }); });
     });
     describe("Failure paths", function () {
+        var expectFailure = function (_a, message) {
+            var _b = _a.status, status = _b === void 0 ? VALID_STATUS : _b, _c = _a.headers, headers = _c === void 0 ? VALID_HEADERS : _c, _d = _a.body, body = _d === void 0 ? VALID_BODY : _d;
+            return __awaiter(void 0, void 0, void 0, function () {
+                var client, rot13Client;
+                return __generator(this, function (_e) {
+                    switch (_e.label) {
+                        case 0:
+                            client = (0, exports.createClient)({
+                                status: status,
+                                headers: headers,
+                                body: body,
+                            }).client;
+                            rot13Client = (0, rot13_client_1.createRot13Client)(client);
+                            return [4 /*yield*/, expect(function () {
+                                    return rot13Client.transformAsync(9999, IRRELEVENAT_TEXT);
+                                }).rejects.toThrow("".concat(message, "\nHost:").concat(HOST, ":9999\nStatus: ").concat(status, "\nHeaders: ").concat(JSON.stringify(headers), "\nBody: ").concat(body))];
+                        case 1:
+                            _e.sent();
+                            return [2 /*return*/];
+                    }
+                });
+            });
+        };
         it("fails gracefully when the status code has an unexpected value", function () { return __awaiter(void 0, void 0, void 0, function () {
-            var client, rot13Client;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, expectFailure({ status: 400 }, "Unexpected status from ROT 13 service")];
+                    case 1:
+                        _a.sent();
+                        return [2 /*return*/];
+                }
+            });
+        }); });
+        it("fails gracefully when body does not exist", function () { return __awaiter(void 0, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, expectFailure({ body: "" }, "Body missing from ROT-13 service")];
+                    case 1:
+                        _a.sent();
+                        return [2 /*return*/];
+                }
+            });
+        }); });
+        it("fails gracefully when the body is un parsable", function () { return __awaiter(void 0, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, expectFailure({ body: "xxx" }, "Unparsable body from ROT-13 service: Unexpected token x in JSON at position 0")];
+                    case 1:
+                        _a.sent();
+                        return [2 /*return*/];
+                }
+            });
+        }); });
+        it("should fails gracefully when the body has unexpected value", function () { return __awaiter(void 0, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, expectFailure({ body: JSON.stringify({ foo: "bar" }) }, "Unexpected body type from Rot-13 service: expected string but received undefined")];
+                    case 1:
+                        _a.sent();
+                        return [2 /*return*/];
+                }
+            });
+        }); });
+        it("does not fail when body have more field than we expect", function () { return __awaiter(void 0, void 0, void 0, function () {
+            var client, rot13Client, res;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        client = createClient({
-                            status: 400,
+                        client = (0, exports.createClient)({
+                            body: JSON.stringify({ transformed: "response", foo: "bar" }),
                         }).client;
                         rot13Client = (0, rot13_client_1.createRot13Client)(client);
-                        return [4 /*yield*/, expect(function () {
-                                return rot13Client.transformAsync(9999, IRRELEVENAT_TEXT);
-                            }).rejects.toThrow("Unexpected status from ROT 13 service\nHost:".concat(HOST, ":9999\nStatus: 400\nHeaders: ").concat(JSON.stringify(VALID_HEADERS), "\nBody: ").concat(VALID_BODY))];
+                        return [4 /*yield*/, rot13Client.transformAsync(IRRELEVANT_PORT, IRRELEVENAT_TEXT)];
+                    case 1:
+                        res = _a.sent();
+                        expect(res).toBe("response");
+                        return [2 /*return*/];
+                }
+            });
+        }); });
+        it("tracks requests", function () { return __awaiter(void 0, void 0, void 0, function () {
+            var client, rot13Client, requests;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        client = (0, exports.createClient)({}).client;
+                        rot13Client = (0, rot13_client_1.createRot13Client)(client);
+                        requests = rot13Client.trackRequests().outpouts;
+                        return [4 /*yield*/, rot13Client.transformAsync(9999, "my text")];
                     case 1:
                         _a.sent();
+                        expect(requests).toEqual([
+                            {
+                                port: 9999,
+                                text: "my text",
+                            },
+                        ]);
                         return [2 /*return*/];
                 }
             });

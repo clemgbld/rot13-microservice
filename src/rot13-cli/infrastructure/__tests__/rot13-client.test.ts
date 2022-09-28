@@ -15,7 +15,7 @@ const VALID_STATUS = 200;
 const VALID_HEADERS = { "content-type": "application/json" };
 const VALID_BODY = JSON.stringify({ transformed: VALID_TRANSFORME_TEXT });
 
-const createClient = ({
+export const createClient = ({
   status = VALID_STATUS,
   headers = VALID_HEADERS,
   body = VALID_BODY,

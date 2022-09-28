@@ -35,30 +35,74 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createRot13Client = void 0;
+var events_1 = __importDefault(require("events"));
+var ramda_1 = require("ramda");
+var trackOutput_1 = require("../../infrastructure/utils/trackOutput");
 var HOST = "localhost";
-var createRot13Client = function (client) { return ({
-    transformAsync: function (port, textToTransform) { return __awaiter(void 0, void 0, void 0, function () {
-        var res;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0: return [4 /*yield*/, client.requestAsync({
-                        host: HOST,
-                        port: port,
-                        path: "/rot-13/transform",
-                        method: "POST",
-                        headers: { "content-type": "application/json" },
-                        body: JSON.stringify({ text: textToTransform }),
-                    })];
-                case 1:
-                    res = _a.sent();
-                    if (res.status !== 200) {
-                        throw new Error("Unexpected status from ROT 13 service\nHost:".concat(HOST, ":").concat(port, "\nStatus: ").concat(res.status, "\nHeaders: ").concat(JSON.stringify(res.headers), "\nBody: ").concat(res.body));
-                    }
-                    return [2 /*return*/, JSON.parse(res.body).transformed];
-            }
-        });
-    }); },
-}); };
+var REQUEST_EVENT = "REQUEST_EVENT";
+var responseErrorBuilder = function (_a) {
+    var res = _a.res, port = _a.port;
+    return function (message) {
+        throw new Error("".concat(message, "\nHost:").concat(HOST, ":").concat(port, "\nStatus: ").concat(res.status, "\nHeaders: ").concat(JSON.stringify(res.headers), "\nBody: ").concat(res.body));
+    };
+};
+var validateResponse = function (_a) {
+    var port = _a.port, res = _a.res;
+    var throwResponseError = responseErrorBuilder({ port: port, res: res });
+    if (res.status !== 200)
+        throwResponseError("Unexpected status from ROT 13 service");
+    if (res.body === "")
+        throwResponseError("Body missing from ROT-13 service");
+    return {
+        throwResponseError: throwResponseError,
+        body: res.body,
+    };
+};
+var parseBody = function (_a) {
+    var throwResponseError = _a.throwResponseError, body = _a.body;
+    try {
+        var parsedBody = JSON.parse(body).transformed;
+        if (typeof parsedBody !== "string")
+            throwResponseError("Unexpected body type from Rot-13 service: expected string but received ".concat(typeof parsedBody));
+        return parsedBody;
+    }
+    catch (_b) {
+        var message = _b.message;
+        throwResponseError("Unparsable body from ROT-13 service: ".concat(message));
+    }
+};
+var validateAndParseResponse = (0, ramda_1.pipe)(validateResponse, parseBody);
+var createRot13Client = function (client) {
+    var emitter = new events_1.default();
+    return {
+        transformAsync: function (port, textToTransform) { return __awaiter(void 0, void 0, void 0, function () {
+            var res;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, client.requestAsync({
+                            host: HOST,
+                            port: port,
+                            path: "/rot-13/transform",
+                            method: "POST",
+                            headers: { "content-type": "application/json" },
+                            body: JSON.stringify({ text: textToTransform }),
+                        })];
+                    case 1:
+                        res = _a.sent();
+                        emitter.emit(REQUEST_EVENT, {
+                            port: port,
+                            text: textToTransform,
+                        });
+                        return [2 /*return*/, validateAndParseResponse({ port: port, res: res })];
+                }
+            });
+        }); },
+        trackRequests: function () { return (0, trackOutput_1.trackOutput)(emitter, REQUEST_EVENT); },
+    };
+};
 exports.createRot13Client = createRot13Client;

@@ -1,7 +1,7 @@
 import EventEmitter from "events";
 import { pipe } from "ramda";
 import { HTTPClient, Response } from "./http-client";
-import { trackOutput } from "../../infrastructure/utils/trackOutput";
+import { trackOutput, Output } from "../../infrastructure/utils/trackOutput";
 
 const HOST = "localhost";
 
@@ -53,6 +53,15 @@ const parseBody = ({
 };
 
 const validateAndParseResponse = pipe(validateResponse, parseBody);
+
+export interface Rot13Client {
+  transformAsync: (port: number, textToTransform: string) => Promise<any>;
+  trackRequests: () => {
+    outpouts: Output[];
+    turnOffTracking: () => void;
+    consume: () => Output[];
+  };
+}
 
 export const createRot13Client = (client: HTTPClient) => {
   const emitter = new EventEmitter();

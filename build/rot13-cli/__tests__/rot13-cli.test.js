@@ -38,37 +38,85 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var command_line_1 = require("../../infrastructure/command-line");
 var rot13_cli_1 = require("../rot13-cli");
+var rot13_client_test_1 = require("../infrastructure/__tests__/rot13-client.test");
+var rot13_client_1 = require("../infrastructure/rot13-client");
 describe("rot13-cli", function () {
     var setupCommandLine = function (args) {
-        if (args === void 0) { args = ["something1", "something2"]; }
+        if (args === void 0) { args = ["9999", "valid-body"]; }
         var fakeCommandLine = (0, command_line_1.commandLine)((0, command_line_1.nullProcess)(args));
         var outpouts = fakeCommandLine.trackStdout().outpouts;
         return { fakeCommandLine: fakeCommandLine, outpouts: outpouts };
     };
-    it("should write todo", function () { return __awaiter(void 0, void 0, void 0, function () {
-        var _a, fakeCommandLine, outpouts;
+    var createFakeRot13Client = function (_a) {
+        var _b = _a === void 0 ? {} : _a, _c = _b.status, status = _c === void 0 ? 200 : _c, _d = _b.headers, headers = _d === void 0 ? { "content-type": "application/json" } : _d, _e = _b.body, body = _e === void 0 ? JSON.stringify({ transformed: "Null response" }) : _e;
+        var client = (0, rot13_client_test_1.createClient)({ status: status, headers: headers, body: body }).client;
+        return (0, rot13_client_1.createRot13Client)(client);
+    };
+    it("calls ROT-13 service", function () { return __awaiter(void 0, void 0, void 0, function () {
+        var _a, fakeCommandLine, outpouts, rot13Client;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
                     _a = setupCommandLine(), fakeCommandLine = _a.fakeCommandLine, outpouts = _a.outpouts;
-                    return [4 /*yield*/, (0, rot13_cli_1.runAsync)(fakeCommandLine)];
+                    rot13Client = createFakeRot13Client();
+                    return [4 /*yield*/, (0, rot13_cli_1.runAsync)(fakeCommandLine, rot13Client)];
                 case 1:
                     _b.sent();
-                    expect(outpouts).toEqual(["TODO\n"]);
+                    expect(outpouts).toEqual(["Null response\n"]);
                     return [2 /*return*/];
             }
         });
     }); });
     it("should give an error message when the user do not provide  2 arguments", function () { return __awaiter(void 0, void 0, void 0, function () {
-        var _a, fakeCommandLine, outpouts;
+        var _a, fakeCommandLine, outpouts, rot13Client;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
-                    _a = setupCommandLine(["something1"]), fakeCommandLine = _a.fakeCommandLine, outpouts = _a.outpouts;
-                    return [4 /*yield*/, (0, rot13_cli_1.runAsync)(fakeCommandLine)];
+                    _a = setupCommandLine(["first-argument"]), fakeCommandLine = _a.fakeCommandLine, outpouts = _a.outpouts;
+                    rot13Client = createFakeRot13Client();
+                    return [4 /*yield*/, (0, rot13_cli_1.runAsync)(fakeCommandLine, rot13Client)];
                 case 1:
                     _b.sent();
                     expect(outpouts).toEqual(["please provide 2 arguments\n"]);
+                    return [2 /*return*/];
+            }
+        });
+    }); });
+    it("should give an error message when the port that the user enter is not a valid one", function () { return __awaiter(void 0, void 0, void 0, function () {
+        var _a, fakeCommandLine, outpouts, rot13Client;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    _a = setupCommandLine([
+                        "unvalid-port",
+                        "valid-body",
+                    ]), fakeCommandLine = _a.fakeCommandLine, outpouts = _a.outpouts;
+                    rot13Client = createFakeRot13Client();
+                    return [4 /*yield*/, (0, rot13_cli_1.runAsync)(fakeCommandLine, rot13Client)];
+                case 1:
+                    _b.sent();
+                    expect(outpouts).toEqual([
+                        "please provide a valid port as first argument\n",
+                    ]);
+                    return [2 /*return*/];
+            }
+        });
+    }); });
+    it("should output an error when rot13 service fail", function () { return __awaiter(void 0, void 0, void 0, function () {
+        var _a, fakeCommandLine, outpouts, rot13Client;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    _a = setupCommandLine(), fakeCommandLine = _a.fakeCommandLine, outpouts = _a.outpouts;
+                    rot13Client = createFakeRot13Client({ status: 400 });
+                    return [4 /*yield*/, (0, rot13_cli_1.runAsync)(fakeCommandLine, rot13Client)];
+                case 1:
+                    _b.sent();
+                    expect(outpouts).toEqual([
+                        "Unexpected status from ROT 13 service\nHost:localhost:9999\nStatus: 400\nHeaders: ".concat(JSON.stringify({
+                            "content-type": "application/json",
+                        }), "\nBody: ").concat(JSON.stringify({ transformed: "Null response" }), "\n"),
+                    ]);
                     return [2 /*return*/];
             }
         });
