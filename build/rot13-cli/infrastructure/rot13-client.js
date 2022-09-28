@@ -36,24 +36,29 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.runAsync = void 0;
-var runAsync = function (commandLine) { return __awaiter(void 0, void 0, void 0, function () {
-    var args;
-    return __generator(this, function (_a) {
-        args = commandLine.args();
-        if (args.length !== 2)
-            return [2 /*return*/, commandLine.writeOutpout("please provide 2 arguments")];
-        commandLine.writeOutpout("TODO");
-        return [2 /*return*/];
-    });
+exports.createRot13Client = void 0;
+var HOST = "localhost";
+var createRot13Client = function (client) { return ({
+    transformAsync: function (port, textToTransform) { return __awaiter(void 0, void 0, void 0, function () {
+        var res;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, client.requestAsync({
+                        host: HOST,
+                        port: port,
+                        path: "/rot-13/transform",
+                        method: "POST",
+                        headers: { "content-type": "application/json" },
+                        body: JSON.stringify({ text: textToTransform }),
+                    })];
+                case 1:
+                    res = _a.sent();
+                    if (res.status !== 200) {
+                        throw new Error("Unexpected status from ROT 13 service\nHost:".concat(HOST, ":").concat(port, "\nStatus: ").concat(res.status, "\nHeaders: ").concat(JSON.stringify(res.headers), "\nBody: ").concat(res.body));
+                    }
+                    return [2 /*return*/, JSON.parse(res.body).transformed];
+            }
+        });
+    }); },
 }); };
-exports.runAsync = runAsync;
-// export const runAsync = async (commandLine: CommandLine, rot13Client) => {
-//   const args = commandLine.args();
-//   if (args.length !== 2)
-//     return commandLine.writeOutpout("please provide 2 arguments");
-//   const [port, text] = args;
-//   const response = await rot13Client.transformAsync(port, text);
-//   commandLine.writeOutpout(response);
-//   commandLine.writeOutpout("TODO");
-// };
+exports.createRot13Client = createRot13Client;

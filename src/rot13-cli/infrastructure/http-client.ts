@@ -1,6 +1,6 @@
 import http from "http";
 import EventEmitter from "events";
-import { trackOutput } from "../../infrastructure/utils/trackOutput";
+import { trackOutput, Output } from "../../infrastructure/utils/trackOutput";
 
 type HTTP = typeof http;
 
@@ -18,7 +18,7 @@ interface Request {
 export interface Response {
   status: number;
   headers?: Record<string, string>;
-  body?: string;
+  body: string;
 }
 
 type ConfigurableResponses = Record<string, Response[]>;
@@ -28,7 +28,7 @@ interface NullHttp {
 }
 
 class NullResponse extends EventEmitter {
-  constructor(private _res: Response = { status: 503 }) {
+  constructor(private _res: Response = { status: 503, body: "" }) {
     super();
     setImmediate(() => {
       this.emit("data", this._res.body);
@@ -71,7 +71,23 @@ const normalizeHeaders = (headers: Record<string, string>) =>
     {}
   );
 
-const withHttpClient = (http: HTTP | NullHttp) => {
+export interface HTTPClient {
+  requestAsync: ({
+    host,
+    port,
+    method,
+    headers,
+    path,
+    body,
+  }: Request) => Promise<Response>;
+  trackRequests: () => {
+    outpouts: Output[];
+    turnOffTracking: () => void;
+    consume: () => Output[];
+  };
+}
+
+const withHttpClient = (http: HTTP | NullHttp): HTTPClient => {
   const emitter = new EventEmitter();
   return {
     requestAsync: async ({
@@ -89,6 +105,7 @@ const withHttpClient = (http: HTTP | NullHttp) => {
           method,
           headers,
           path,
+          body,
         });
 
         emitter.emit(REQUEST_EVENT, {
@@ -97,6 +114,7 @@ const withHttpClient = (http: HTTP | NullHttp) => {
           method: method.toUpperCase(),
           headers: normalizeHeaders(headers),
           path,
+          body,
         });
 
         request.on("response", (res: any) => {

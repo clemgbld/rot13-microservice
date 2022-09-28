@@ -8,18 +8,18 @@ describe("rot13-cli", () => {
     return { fakeCommandLine, outpouts };
   };
 
-  it("should write todo", () => {
+  it("should write todo", async () => {
     const { fakeCommandLine, outpouts } = setupCommandLine();
 
-    runAsync(fakeCommandLine);
+    await runAsync(fakeCommandLine);
 
     expect(outpouts).toEqual(["TODO\n"]);
   });
 
-  it("should give an error message when the user do not provide  2 arguments", () => {
+  it("should give an error message when the user do not provide  2 arguments", async () => {
     const { fakeCommandLine, outpouts } = setupCommandLine(["something1"]);
 
-    runAsync(fakeCommandLine);
+    await runAsync(fakeCommandLine);
 
     expect(outpouts).toEqual(["please provide 2 arguments\n"]);
   });

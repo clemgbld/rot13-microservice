@@ -251,7 +251,7 @@ describe("HTTP client", function () {
                         client = http_client_1.httpClient.createNull({
                             "/endpoint/1": [
                                 { status: 200, headers: { myHeader: "my value" }, body: "body" },
-                                { status: 404 },
+                                { status: 404, body: "" },
                             ],
                             "/endpoint/2": [{ status: 301, body: "endpoint 2 body" }],
                         });
@@ -317,6 +317,7 @@ describe("HTTP client", function () {
                         _a.sent();
                         expect(requests).toEqual([
                             {
+                                body: "my body",
                                 host: HOST,
                                 port: PORT,
                                 method: "POST",

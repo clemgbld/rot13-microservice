@@ -73,7 +73,7 @@ var REQUEST_EVENT = "REQUEST_EVENT";
 var NullResponse = /** @class */ (function (_super) {
     __extends(NullResponse, _super);
     function NullResponse(_res) {
-        if (_res === void 0) { _res = { status: 503 }; }
+        if (_res === void 0) { _res = { status: 503, body: "" }; }
         var _this = _super.call(this) || this;
         _this._res = _res;
         setImmediate(function () {
@@ -143,6 +143,7 @@ var withHttpClient = function (http) {
                                     method: method,
                                     headers: headers,
                                     path: path,
+                                    body: body,
                                 });
                                 emitter.emit(REQUEST_EVENT, {
                                     host: host,
@@ -150,6 +151,7 @@ var withHttpClient = function (http) {
                                     method: method.toUpperCase(),
                                     headers: normalizeHeaders(headers),
                                     path: path,
+                                    body: body,
                                 });
                                 request.on("response", function (res) {
                                     var headers = __assign({}, res.headers);
