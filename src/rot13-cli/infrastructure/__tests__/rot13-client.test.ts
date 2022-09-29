@@ -5,6 +5,7 @@ interface Response {
   status?: number;
   headers?: Record<string, string>;
   body?: string;
+  hang?: boolean;
 }
 
 const VALID_TRANSFORME_TEXT = "transformed_text";
@@ -19,6 +20,7 @@ export const createClient = ({
   status = VALID_STATUS,
   headers = VALID_HEADERS,
   body = VALID_BODY,
+  hang = false,
 }: Response) => {
   const client = httpClient.createNull({
     "/rot-13/transform": [
@@ -26,6 +28,7 @@ export const createClient = ({
         status,
         headers,
         body,
+        hang,
       },
     ],
   });
@@ -157,6 +160,16 @@ describe("rot13 service client", () => {
           text: "my text",
         },
       ]);
+    });
+
+    it("simulates hangs", async () => {
+      const { client } = createClient({ hang: true });
+
+      const rot13Client = createRot13Client(client);
+
+      const responsePromise = rot13Client.transformAsync(9999, "my text");
+
+      await expect(responsePromise).toNotBeAResolvedPromise();
     });
   });
 });

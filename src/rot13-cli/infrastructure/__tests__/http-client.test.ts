@@ -12,32 +12,6 @@ declare global {
   }
 }
 
-const drainEventLoopAsync = async () => {
-  await new Promise((resolve, reject) => {
-    setImmediate(() => {
-      setImmediate(resolve);
-    });
-  });
-};
-
-expect.extend({
-  // does not work when you use setImmediate in your own code
-  toNotBeAResolvedPromise: async (promise: Promise<any>) => {
-    let promiseResolved = false;
-
-    promise.then(() => {
-      promiseResolved = true;
-    });
-
-    await drainEventLoopAsync();
-
-    return {
-      pass: !promiseResolved,
-      message: () => "Expected promise to not be resolved",
-    };
-  },
-});
-
 interface Server {
   startAsync: () => Promise<unknown>;
   stopAsync: () => Promise<unknown>;
@@ -142,7 +116,7 @@ describe("HTTP client", () => {
     await server.stopAsync();
   });
 
-  describe.skip("Real implementation", () => {
+  describe("Real implementation", () => {
     it("performs request and returns a response", async () => {
       const client = httpClient.create();
 
