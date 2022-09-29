@@ -21,18 +21,25 @@ export interface Response {
   body: string;
 }
 
-type ConfigurableResponses = Record<string, Response[]>;
+interface ConfiguarbleResponse {
+  status?: number;
+  headers?: Record<string, string>;
+  body?: string;
+  hang?: boolean;
+}
+
+type ConfigurableResponses = Record<string, ConfiguarbleResponse[]>;
 
 interface NullHttp {
   request: (request: Request) => EventEmitter;
 }
 
 class NullResponse extends EventEmitter {
-  constructor(private _res: Response = { status: 503, body: "" }) {
+  constructor(private _res: ConfiguarbleResponse = { status: 503, body: "" }) {
     super();
     setImmediate(() => {
       this.emit("data", this._res.body);
-      this.emit("end");
+      if (!this._res.hang) this.emit("end");
     });
   }
 
@@ -46,7 +53,7 @@ class NullResponse extends EventEmitter {
 }
 
 class NullRequest extends EventEmitter {
-  constructor(private _res: Response[] = []) {
+  constructor(private _res: ConfiguarbleResponse[] = []) {
     super();
   }
 

@@ -1,6 +1,43 @@
 import http from "http";
 import { httpClient } from "../http-client";
 
+declare global {
+  namespace jest {
+    interface Matchers<R> {
+      toNotBeAResolvedPromise: () => Promise<{
+        pass: false;
+        message: () => string;
+      }>;
+    }
+  }
+}
+
+const drainEventLoopAsync = async () => {
+  await new Promise((resolve, reject) => {
+    setImmediate(() => {
+      setImmediate(resolve);
+    });
+  });
+};
+
+expect.extend({
+  // does not work when you use setImmediate in your own code
+  toNotBeAResolvedPromise: async (promise: Promise<any>) => {
+    let promiseResolved = false;
+
+    promise.then(() => {
+      promiseResolved = true;
+    });
+
+    await drainEventLoopAsync();
+
+    return {
+      pass: !promiseResolved,
+      message: () => "Expected promise to not be resolved",
+    };
+  },
+});
+
 interface Server {
   startAsync: () => Promise<unknown>;
   stopAsync: () => Promise<unknown>;
@@ -105,7 +142,7 @@ describe("HTTP client", () => {
     await server.stopAsync();
   });
 
-  describe("Real implementation", () => {
+  describe.skip("Real implementation", () => {
     it("performs request and returns a response", async () => {
       const client = httpClient.create();
 
@@ -253,5 +290,22 @@ describe("HTTP client", () => {
         },
       ]);
     });
+  });
+
+  it("simulates hangs", async () => {
+    const client = httpClient.createNull({
+      "/endpoint": [{ hang: true }],
+    });
+
+    const request = client.requestAsync({
+      host: HOST,
+      port: PORT,
+      method: "post",
+      headers: { myheaders: "my value" },
+      body: "my body",
+      path: "/endpoint",
+    });
+
+    await expect(request).toNotBeAResolvedPromise();
   });
 });
