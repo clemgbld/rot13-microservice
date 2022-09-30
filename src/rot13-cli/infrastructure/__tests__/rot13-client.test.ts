@@ -1,6 +1,17 @@
 import { createRot13Client } from "../rot13-client";
 import { httpClient } from "../http-client";
 
+declare global {
+  namespace jest {
+    interface Matchers<R> {
+      toNotBeAResolvedPromise: () => Promise<{
+        pass: false;
+        message: () => string;
+      }>;
+    }
+  }
+}
+
 interface Response {
   status?: number;
   headers?: Record<string, string>;

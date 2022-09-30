@@ -1,9 +1,11 @@
 import { CommandLine } from "../infrastructure/command-line";
 import { Rot13Client } from "./infrastructure/rot13-client";
+import { Clock } from "../infrastructure/clock";
 
 export const runAsync = async (
   commandLine: CommandLine,
-  rot13Client: Rot13Client
+  rot13Client: Rot13Client,
+  clock: Clock
 ) => {
   const args = commandLine.args();
 
