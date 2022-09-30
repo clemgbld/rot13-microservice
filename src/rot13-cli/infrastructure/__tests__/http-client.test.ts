@@ -1,5 +1,5 @@
 import http from "http";
-import { httpClient } from "../http-client";
+import { httpClient, HTTPClient } from "../http-client";
 
 declare global {
   namespace jest {
@@ -116,17 +116,72 @@ describe("HTTP client", () => {
     await server.stopAsync();
   });
 
+  const makeRequestAsync = async ({
+    host = HOST,
+    port = PORT,
+    method = "post",
+    headers,
+    body,
+    path = "/my-path",
+  }: {
+    host?: string;
+    port?: number;
+    method?: string;
+    headers?: Record<string, string>;
+    body?: string;
+    path?: string;
+  }) => {
+    const client = httpClient.create();
+    const response = client.request({
+      host,
+      port,
+      method,
+      headers,
+      body,
+      path,
+    });
+
+    return await response.responsePromise;
+  };
+
+  const makeNullRequestAsync = async ({
+    client = httpClient.createNull(),
+    host = HOST,
+    port = PORT,
+    method = "post",
+    headers,
+    body,
+    path = "/my-path",
+  }: {
+    client?: HTTPClient;
+    host?: string;
+    port?: number;
+    method?: string;
+    headers?: Record<string, string>;
+    body?: string;
+    path?: string;
+  }) => {
+    const response = client.request({
+      host,
+      port,
+      method,
+      headers,
+      body,
+      path,
+    });
+
+    return await response.responsePromise;
+  };
+
   describe("Real implementation", () => {
     it("performs request and returns a response", async () => {
-      const client = httpClient.create();
-
       server.setResponse({
         status: 999,
         headers: { myRequestHeader: "my value" },
         body: "my-body",
       });
 
-      const response = await client.requestAsync({
+      const response = await makeRequestAsync({
         host: HOST,
         port: PORT,
         method: "POST",
@@ -149,8 +204,7 @@ describe("HTTP client", () => {
     });
 
     it("does not require headers and body", async () => {
-      const client = httpClient.create();
-      await client.requestAsync({
+      await makeRequestAsync({
         host: HOST,
         port: PORT,
         method: "GET",
@@ -174,16 +228,13 @@ describe("HTTP client", () => {
       path: "/my-path",
     };
     it("does not talk to network", async () => {
-      const client = httpClient.createNull();
-      await client.requestAsync(IRELEVENAT_REQUEST);
+      await makeNullRequestAsync(IRELEVENAT_REQUEST);
 
       expect(server.getLastRequest()).toBe(null);
     });
 
     it("provides a default response", async () => {
-      const client = httpClient.createNull();
-
-      const response = await client.requestAsync(IRELEVENAT_REQUEST);
+      const response = await makeNullRequestAsync(IRELEVENAT_REQUEST);
 
       expect(response).toEqual({
         status: 503,
@@ -201,21 +252,24 @@ describe("HTTP client", () => {
         "/endpoint/2": [{ status: 301, body: "endpoint 2 body" }],
       });
 
-      const response1A = await client.requestAsync({
+      const response1A = await makeNullRequestAsync({
+        client,
         host: HOST,
         port: PORT,
         method: "GET",
         path: "/endpoint/1",
       });
 
-      const response1B = await client.requestAsync({
+      const response1B = await makeNullRequestAsync({
+        client,
         host: HOST,
         port: PORT,
         method: "GET",
         path: "/endpoint/1",
       });
 
-      const response2A = await client.requestAsync({
+      const response2A = await makeNullRequestAsync({
+        client,
         host: HOST,
         port: PORT,
         method: "GET",
@@ -244,7 +298,8 @@ describe("HTTP client", () => {
     it("tracks request", async () => {
       const client = httpClient.createNull();
       const { outpouts: requests } = client.trackRequests();
-      await client.requestAsync({
+      await makeNullRequestAsync({
+        client,
         host: HOST,
         port: PORT,
         method: "post",
@@ -271,7 +326,8 @@ describe("HTTP client", () => {
       "/endpoint": [{ hang: true }],
     });
 
-    const request = client.requestAsync({
+    const request = makeNullRequestAsync({
+      client,
       host: HOST,
       port: PORT,
       method: "post",

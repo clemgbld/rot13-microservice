@@ -79,14 +79,9 @@ const normalizeHeaders = (headers: Record<string, string>) =>
   );
 
 export interface HTTPClient {
-  requestAsync: ({
-    host,
-    port,
-    method,
-    headers,
-    path,
-    body,
-  }: Request) => Promise<Response>;
+  request: ({ host, port, method, headers, path, body }: Request) => {
+    responsePromise: Promise<Response>;
+  };
   trackRequests: () => {
     outpouts: Output[];
     turnOffTracking: () => void;
@@ -97,53 +92,58 @@ export interface HTTPClient {
 const withHttpClient = (http: HTTP | NullHttp): HTTPClient => {
   const emitter = new EventEmitter();
   return {
-    requestAsync: async ({
+    request: ({
       host,
       port,
       method,
       headers = {},
       path,
       body = "",
-    }: Request) =>
-      await new Promise((resolve, reject) => {
-        const request: any = http.request({
-          host,
-          port,
-          method,
-          headers,
-          path,
-          body,
-        });
-
-        emitter.emit(REQUEST_EVENT, {
-          host,
-          port,
-          method: method.toUpperCase(),
-          headers: normalizeHeaders(headers),
-          path,
-          body,
-        });
-
-        request.on("response", (res: any) => {
-          const headers = { ...res.headers };
-
-          delete headers.connection;
-          delete headers["content-length"];
-          delete headers.host;
-          delete headers.date;
-
-          let body = "";
-          res.on("data", (chunk = "") => {
-            body += chunk;
+    }: Request) => {
+      const responsePromise: Promise<Response> = new Promise(
+        (resolve, reject) => {
+          const request: any = http.request({
+            host,
+            port,
+            method,
+            headers,
+            path,
+            body,
           });
 
-          res.on("end", () => {
-            resolve({ status: res.statusCode, headers, body });
+          emitter.emit(REQUEST_EVENT, {
+            host,
+            port,
+            method: method.toUpperCase(),
+            headers: normalizeHeaders(headers),
+            path,
+            body,
           });
-        });
 
-        request.end(body);
-      }),
+          request.on("response", (res: any) => {
+            const headers = { ...res.headers };
+
+            delete headers.connection;
+            delete headers["content-length"];
+            delete headers.host;
+            delete headers.date;
+
+            let body = "";
+            res.on("data", (chunk = "") => {
+              body += chunk;
+            });
+
+            res.on("end", () => {
+              resolve({ status: res.statusCode, headers, body });
+            });
+          });
+
+          request.end(body);
+        }
+      );
+
+      return { responsePromise };
+    },
 
     trackRequests: () => trackOutput(emitter, REQUEST_EVENT),
   };

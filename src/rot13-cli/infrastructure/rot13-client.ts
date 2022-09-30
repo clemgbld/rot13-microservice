@@ -67,7 +67,7 @@ export const createRot13Client = (client: HTTPClient) => {
   const emitter = new EventEmitter();
   return {
     transformAsync: async (port: number, textToTransform: string) => {
-      const res = await client.requestAsync({
+      const resPromise = client.request({
         host: HOST,
         port,
         path: "/rot-13/transform",
@@ -79,6 +79,8 @@ export const createRot13Client = (client: HTTPClient) => {
         port,
         text: textToTransform,
       });
+
+      const res = await resPromise.responsePromise;
 
       return validateAndParseResponse({ port, res });
     },
