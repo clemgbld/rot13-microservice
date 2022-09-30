@@ -4,6 +4,19 @@ import { createClient } from "../infrastructure/__tests__/rot13-client.test";
 import { createRot13Client } from "../infrastructure/rot13-client";
 import { clock } from "../../infrastructure/clock";
 
+declare global {
+  namespace jest {
+    interface Matchers<R> {
+      toBeAResolvedPromise: () => Promise<{
+        pass: true;
+        message: () => string;
+      }>;
+    }
+  }
+}
+
+const TIMEOUT_TIME = 5000;
+
 describe("rot13-cli", () => {
   const setupCommandLine = (args: string[] = ["9999", "valid-body"]) => {
     const fakeCommandLine = commandLine(nullProcess(args));
@@ -83,6 +96,10 @@ describe("rot13-cli", () => {
     const { fakeCommandLine, outpouts } = setupCommandLine();
     const fakeClock = clock.createNull({ now: 0 });
     const rot13Client = createFakeRot13Client({ status: 200, hang: true });
-    runAsync(fakeCommandLine, rot13Client, fakeClock);
+    const runPromise = runAsync(fakeCommandLine, rot13Client, fakeClock);
+    fakeClock.advanceNullAsync(TIMEOUT_TIME);
+
+    await expect(runPromise).toBeAResolvedPromise();
+    expect(outpouts).toEqual(["Rot13 service failed due to a timeout\n"]);
   });
 });

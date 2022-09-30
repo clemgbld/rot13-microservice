@@ -22,6 +22,21 @@ expect.extend({
       message: () => "Expected promise to not be resolved",
     };
   },
+  toBeAResolvedPromise: async (promise: Promise<any>) => {
+    // does not work when you use setImmediate in your own code
+    let promiseResolved = false;
+
+    promise.then(() => {
+      promiseResolved = true;
+    });
+
+    await drainEventLoopAsync();
+
+    return {
+      pass: !!promiseResolved,
+      message: () => "Expected promise to be resolved",
+    };
+  },
 });
 
 export {};

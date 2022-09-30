@@ -2,6 +2,11 @@ import { CommandLine } from "../infrastructure/command-line";
 import { Rot13Client } from "./infrastructure/rot13-client";
 import { Clock } from "../infrastructure/clock";
 
+const timeoutAsync = async (clock: Clock) => {
+  await clock.waitAsync(5000);
+  throw new Error("Rot13 service failed due to a timeout");
+};
+
 export const runAsync = async (
   commandLine: CommandLine,
   rot13Client: Rot13Client,
@@ -21,7 +26,10 @@ export const runAsync = async (
   }
 
   try {
-    const response = await rot13Client.transformAsync(+port, text);
+    const response = await Promise.race([
+      rot13Client.transformAsync(+port, text),
+      timeoutAsync(clock),
+    ]);
     commandLine.writeOutpout(response);
   } catch (err: any) {
     commandLine.writeOutpout(err.message);
