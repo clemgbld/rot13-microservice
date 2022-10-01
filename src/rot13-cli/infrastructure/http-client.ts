@@ -63,6 +63,10 @@ class NullRequest extends EventEmitter {
     });
     return this;
   }
+
+  abort() {}
+
+  destroy(rejectPromise: Promise<Error>) {}
 }
 
 const nullHttp = (res: ConfigurableResponses) => ({

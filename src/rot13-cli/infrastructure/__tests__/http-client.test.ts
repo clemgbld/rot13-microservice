@@ -451,5 +451,19 @@ describe("HTTP client", () => {
     });
   });
 
-  describe("nullability", () => {});
+  describe("nullability", () => {
+    it("cancel request", async () => {
+      const client = httpClient.createNull({
+        "/endpoint": [{ hang: true, status: 200 }],
+      });
+
+      const { responsePromise, cancelFn } = client.request(IRELEVENAT_REQUEST);
+
+      cancelFn("cancel request");
+
+      await expect(async () => await responsePromise).rejects.toThrow(
+        "cancel request"
+      );
+    });
+  });
 });
