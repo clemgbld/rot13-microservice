@@ -31,6 +31,7 @@ export interface Response {
   status: number;
   headers: Record<string, string>;
   body?: string;
+  hang?: boolean;
 }
 
 const HOST = "localhost";
@@ -73,7 +74,7 @@ const createSpyServer = () => {
               res.setHeader(key, value);
             });
 
-            res.end(nextResponse.body);
+            if (!nextResponse.hang) res.end(nextResponse.body);
           });
         });
 
@@ -98,6 +99,13 @@ const createSpyServer = () => {
       };
     },
   };
+};
+
+const IRELEVENAT_REQUEST = {
+  host: HOST,
+  port: PORT,
+  method: "GET",
+  path: "/my-path",
 };
 
 describe("HTTP client", () => {
@@ -221,12 +229,6 @@ describe("HTTP client", () => {
   });
 
   describe("nullability", () => {
-    const IRELEVENAT_REQUEST = {
-      host: HOST,
-      port: PORT,
-      method: "GET",
-      path: "/my-path",
-    };
     it("does not talk to network", async () => {
       await makeNullRequestAsync(IRELEVENAT_REQUEST);
 
@@ -337,5 +339,20 @@ describe("HTTP client", () => {
     });
 
     await expect(request).toNotBeAResolvedPromise();
+  });
+
+  describe("cancellation", () => {
+    it("can cancel request", async () => {
+      server.setResponse({ hang: true, status: 200, headers: {} });
+
+      const client = httpClient.create();
+
+      const { responsePromise, cancelFn } = client.request(IRELEVENAT_REQUEST);
+
+      cancelFn("my cancel message");
+      await expect(async () => {
+        await responsePromise;
+      }).rejects.toThrow("my cancel message");
+    });
   });
 });

@@ -81,6 +81,7 @@ const normalizeHeaders = (headers: Record<string, string>) =>
 export interface HTTPClient {
   request: ({ host, port, method, headers, path, body }: Request) => {
     responsePromise: Promise<Response>;
+    cancelFn: (message: string) => void;
   };
   trackRequests: () => {
     outpouts: Output[];
@@ -91,6 +92,7 @@ export interface HTTPClient {
 
 const withHttpClient = (http: HTTP | NullHttp): HTTPClient => {
   const emitter = new EventEmitter();
+  let cancelFn: (message: string) => void;
   return {
     request: ({
       host,
@@ -110,6 +112,11 @@ const withHttpClient = (http: HTTP | NullHttp): HTTPClient => {
             path,
             body,
           });
+
+          cancelFn = (message: string) => {
+            request.abort();
+            request.destroy(reject(new Error(message)));
+          };
 
           emitter.emit(REQUEST_EVENT, {
             host,
@@ -142,7 +149,7 @@ const withHttpClient = (http: HTTP | NullHttp): HTTPClient => {
         }
       );
 
-      return { responsePromise };
+      return { responsePromise, cancelFn };
     },
 
     trackRequests: () => trackOutput(emitter, REQUEST_EVENT),
