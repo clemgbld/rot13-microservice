@@ -35,7 +35,7 @@ export interface Response {
 }
 
 const HOST = "localhost";
-const PORT = 3274;
+const PORT = 3287;
 
 const createSpyServer = () => {
   const server = http.createServer();
@@ -349,10 +349,107 @@ describe("HTTP client", () => {
 
       const { responsePromise, cancelFn } = client.request(IRELEVENAT_REQUEST);
 
-      cancelFn("my cancel message");
+      const cancelled = cancelFn("my cancel message");
+
+      expect(cancelled).toBe(true);
+
       await expect(async () => {
         await responsePromise;
       }).rejects.toThrow("my cancel message");
     });
+
+    it("ignores additional request to cancel", async () => {
+      server.setResponse({ hang: true, status: 200, headers: {} });
+
+      const client = httpClient.create();
+
+      const { responsePromise, cancelFn } = client.request(IRELEVENAT_REQUEST);
+      cancelFn("first cancel");
+      const cancelled = cancelFn("second cancel");
+
+      await expect(async () => {
+        await responsePromise;
+      }).rejects.toThrow("first cancel");
+
+      expect(cancelled).toBe(false);
+    });
+
+    it("ignores cancellation after response has already been received", async () => {
+      server.setResponse({ status: 200, headers: {} });
+
+      const client = httpClient.create();
+
+      const { responsePromise, cancelFn } = client.request(IRELEVENAT_REQUEST);
+
+      await responsePromise;
+
+      const cancelled = cancelFn(
+        "should not work when the response is already received"
+      );
+
+      expect(cancelled).toBe(false);
+    });
+
+    it("tracks request that are cancelled", async () => {
+      server.setResponse({ hang: true, status: 200, headers: {} });
+
+      const client = httpClient.create();
+
+      const { outpouts: requests } = client.trackRequests();
+
+      const { responsePromise, cancelFn } = client.request(IRELEVENAT_REQUEST);
+
+      cancelFn("cancel request");
+      try {
+        await responsePromise;
+      } catch (err) {}
+      expect(requests).toEqual([
+        {
+          host: "localhost",
+          port: 3287,
+          method: "GET",
+          headers: {},
+          path: "/my-path",
+          body: "",
+        },
+
+        {
+          host: "localhost",
+          port: 3287,
+          method: "GET",
+          headers: {},
+          path: "/my-path",
+          body: "",
+          cancelled: true,
+        },
+      ]);
+    });
+
+    it("does not track request that occurs after response", async () => {
+      server.setResponse({ status: 200, headers: {} });
+
+      const client = httpClient.create();
+
+      const { outpouts: requests } = client.trackRequests();
+
+      const { responsePromise, cancelFn } = client.request(IRELEVENAT_REQUEST);
+
+      await responsePromise;
+
+      cancelFn("cancel request");
+
+      expect(requests).toEqual([
+        {
+          host: "localhost",
+          port: 3287,
+          method: "GET",
+          headers: {},
+          path: "/my-path",
+          body: "",
+        },
+      ]);
+    });
   });
+
+  describe("nullability", () => {});
 });

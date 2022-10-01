@@ -81,7 +81,7 @@ const normalizeHeaders = (headers: Record<string, string>) =>
 export interface HTTPClient {
   request: ({ host, port, method, headers, path, body }: Request) => {
     responsePromise: Promise<Response>;
-    cancelFn: (message: string) => void;
+    cancelFn: (message: string) => boolean;
   };
   trackRequests: () => {
     outpouts: Output[];
@@ -92,7 +92,7 @@ export interface HTTPClient {
 
 const withHttpClient = (http: HTTP | NullHttp): HTTPClient => {
   const emitter = new EventEmitter();
-  let cancelFn: (message: string) => void;
+  let cancelFn: (message: string) => boolean;
   return {
     request: ({
       host,
@@ -113,19 +113,28 @@ const withHttpClient = (http: HTTP | NullHttp): HTTPClient => {
             body,
           });
 
-          cancelFn = (message: string) => {
-            request.abort();
-            request.destroy(reject(new Error(message)));
-          };
+          let cancellable = true;
 
-          emitter.emit(REQUEST_EVENT, {
+          const requestData = {
             host,
             port,
             method: method.toUpperCase(),
             headers: normalizeHeaders(headers),
             path,
             body,
-          });
+          };
+
+          cancelFn = (message: string) => {
+            if (!cancellable) return false;
+            request.abort();
+            request.destroy(reject(new Error(message)));
+            cancellable = false;
+
+            emitter.emit(REQUEST_EVENT, { ...requestData, cancelled: true });
+            return true;
+          };
+
+          emitter.emit(REQUEST_EVENT, requestData);
 
           request.on("response", (res: any) => {
             const headers = { ...res.headers };
@@ -141,6 +150,7 @@ const withHttpClient = (http: HTTP | NullHttp): HTTPClient => {
             });
 
             res.on("end", () => {
+              cancellable = false;
               resolve({ status: res.statusCode, headers, body });
             });
           });
