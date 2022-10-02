@@ -60,7 +60,7 @@ describe("rot13 service client", () => {
 
       const rot13Client = createRot13Client(client);
 
-      await rot13Client.transformAsync(9999, "text_to_transform");
+      await rot13Client.transform(9999, "text_to_transform").transformPromise;
 
       expect(requests).toEqual([
         {
@@ -81,10 +81,8 @@ describe("rot13 service client", () => {
         body: VALID_BODY,
       });
       const rot13Client = createRot13Client(client);
-      const res = await rot13Client.transformAsync(
-        IRRELEVANT_PORT,
-        IRRELEVENAT_TEXT
-      );
+      const res = await rot13Client.transform(IRRELEVANT_PORT, IRRELEVENAT_TEXT)
+        .transformPromise;
 
       expect(res).toBe(VALID_TRANSFORME_TEXT);
     });
@@ -107,8 +105,8 @@ describe("rot13 service client", () => {
 
       const rot13Client = createRot13Client(client);
 
-      await expect(() =>
-        rot13Client.transformAsync(9999, IRRELEVENAT_TEXT)
+      await expect(
+        () => rot13Client.transform(9999, IRRELEVENAT_TEXT).transformPromise
       ).rejects.toThrow(
         `${message}\nHost:${HOST}:9999\nStatus: ${status}\nHeaders: ${JSON.stringify(
           headers
@@ -148,10 +146,8 @@ describe("rot13 service client", () => {
 
       const rot13Client = createRot13Client(client);
 
-      const res = await rot13Client.transformAsync(
-        IRRELEVANT_PORT,
-        IRRELEVENAT_TEXT
-      );
+      const res = await rot13Client.transform(IRRELEVANT_PORT, IRRELEVENAT_TEXT)
+        .transformPromise;
 
       expect(res).toBe("response");
     });
@@ -163,7 +159,7 @@ describe("rot13 service client", () => {
 
       const { outpouts: requests } = rot13Client.trackRequests();
 
-      await rot13Client.transformAsync(9999, "my text");
+      await rot13Client.transform(9999, "my text").transformPromise;
 
       expect(requests).toEqual([
         {
@@ -178,9 +174,92 @@ describe("rot13 service client", () => {
 
       const rot13Client = createRot13Client(client);
 
-      const responsePromise = rot13Client.transformAsync(9999, "my text");
+      const responsePromise = rot13Client.transform(
+        9999,
+        "my text"
+      ).transformPromise;
 
       await expect(responsePromise).toNotBeAResolvedPromise();
+    });
+
+    it("can cancel request", async () => {
+      const { client, requests } = createClient({ hang: true });
+
+      const rot13Client = createRot13Client(client);
+
+      const { cancelFn, transformPromise } = rot13Client.transform(
+        9999,
+        "my text"
+      );
+
+      cancelFn();
+
+      await expect(async () => await transformPromise).rejects.toThrow(
+        "Rot13 request cancelled\nendpoint: /rot-13/transform"
+      );
+
+      expect(requests).toEqual([
+        {
+          host: "localhost",
+          port: 9999,
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          path: "/rot-13/transform",
+          body: '{"text":"my text"}',
+        },
+        {
+          host: "localhost",
+          port: 9999,
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          path: "/rot-13/transform",
+          body: '{"text":"my text"}',
+          cancelled: true,
+        },
+      ]);
+    });
+
+    it("can tracks requests that are cancel", async () => {
+      const { client } = createClient({ hang: true });
+
+      const rot13Client = createRot13Client(client);
+
+      const { outpouts: requests } = rot13Client.trackRequests();
+
+      const { cancelFn, transformPromise } = rot13Client.transform(
+        9999,
+        "my text"
+      );
+
+      cancelFn();
+
+      try {
+        await transformPromise;
+      } catch (err) {}
+
+      expect(requests).toEqual([
+        { port: 9999, text: "my text" },
+        { port: 9999, text: "my text", cancelled: true },
+      ]);
+    });
+
+    it("does not track request after response receive", async () => {
+      const { client } = createClient({});
+
+      const rot13Client = createRot13Client(client);
+
+      const { outpouts: requests } = rot13Client.trackRequests();
+
+      const { cancelFn, transformPromise } = rot13Client.transform(
+        9999,
+        "my text"
+      );
+
+      await transformPromise;
+
+      cancelFn();
+
+      expect(requests).toEqual([{ port: 9999, text: "my text" }]);
     });
   });
 });

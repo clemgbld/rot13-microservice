@@ -7,6 +7,8 @@ const HOST = "localhost";
 
 const REQUEST_EVENT = "REQUEST_EVENT";
 
+const END_POINT = "/rot-13/transform";
+
 const responseErrorBuilder =
   ({ res, port }: { res: Response; port: number }) =>
   (message: string) => {
@@ -54,8 +56,19 @@ const parseBody = ({
 
 const validateAndParseResponse = pipe(validateResponse, parseBody);
 
+const validateAndParseResponseAsync = async ({
+  responsePromise,
+  port,
+}: {
+  responsePromise: Promise<Response>;
+  port: number;
+}) => validateAndParseResponse({ port, res: await responsePromise });
+
 export interface Rot13Client {
-  transformAsync: (port: number, textToTransform: string) => Promise<any>;
+  transform: (
+    port: number,
+    textToTransform: string
+  ) => { transformPromise: Promise<any> };
   trackRequests: () => {
     outpouts: Output[];
     turnOffTracking: () => void;
@@ -66,23 +79,37 @@ export interface Rot13Client {
 export const createRot13Client = (client: HTTPClient) => {
   const emitter = new EventEmitter();
   return {
-    transformAsync: async (port: number, textToTransform: string) => {
-      const resPromise = client.request({
+    transform: (port: number, textToTransform: string) => {
+      const requestData = {
+        port,
+        text: textToTransform,
+      };
+
+      const { responsePromise, cancelFn: httpClientCancelFn } = client.request({
         host: HOST,
         port,
-        path: "/rot-13/transform",
+        path: END_POINT,
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ text: textToTransform }),
       });
-      emitter.emit(REQUEST_EVENT, {
+      emitter.emit(REQUEST_EVENT, requestData);
+
+      const transformPromise = validateAndParseResponseAsync({
         port,
-        text: textToTransform,
+        responsePromise,
       });
 
-      const res = await resPromise.responsePromise;
+      const cancelFn = () => {
+        const cancelled = httpClientCancelFn(
+          `Rot13 request cancelled\nendpoint: ${END_POINT}`
+        );
 
-      return validateAndParseResponse({ port, res });
+        if (cancelled)
+          emitter.emit(REQUEST_EVENT, { ...requestData, cancelled: true });
+      };
+
+      return { transformPromise, cancelFn };
     },
     trackRequests: () => trackOutput(emitter, REQUEST_EVENT),
   };
