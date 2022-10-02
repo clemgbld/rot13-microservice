@@ -47,13 +47,14 @@ var VALID_STATUS = 200;
 var VALID_HEADERS = { "content-type": "application/json" };
 var VALID_BODY = JSON.stringify({ transformed: VALID_TRANSFORME_TEXT });
 var createClient = function (_a) {
-    var _b = _a.status, status = _b === void 0 ? VALID_STATUS : _b, _c = _a.headers, headers = _c === void 0 ? VALID_HEADERS : _c, _d = _a.body, body = _d === void 0 ? VALID_BODY : _d;
+    var _b = _a.status, status = _b === void 0 ? VALID_STATUS : _b, _c = _a.headers, headers = _c === void 0 ? VALID_HEADERS : _c, _d = _a.body, body = _d === void 0 ? VALID_BODY : _d, _e = _a.hang, hang = _e === void 0 ? false : _e;
     var client = http_client_1.httpClient.createNull({
         "/rot-13/transform": [
             {
                 status: status,
                 headers: headers,
                 body: body,
+                hang: hang,
             },
         ],
     });
@@ -74,7 +75,7 @@ describe("rot13 service client", function () {
                             body: VALID_BODY,
                         }), client = _a.client, requests = _a.requests;
                         rot13Client = (0, rot13_client_1.createRot13Client)(client);
-                        return [4 /*yield*/, rot13Client.transformAsync(9999, "text_to_transform")];
+                        return [4 /*yield*/, rot13Client.transform(9999, "text_to_transform").transformPromise];
                     case 1:
                         _b.sent();
                         expect(requests).toEqual([
@@ -102,7 +103,8 @@ describe("rot13 service client", function () {
                             body: VALID_BODY,
                         }).client;
                         rot13Client = (0, rot13_client_1.createRot13Client)(client);
-                        return [4 /*yield*/, rot13Client.transformAsync(IRRELEVANT_PORT, IRRELEVENAT_TEXT)];
+                        return [4 /*yield*/, rot13Client.transform(IRRELEVANT_PORT, IRRELEVENAT_TEXT)
+                                .transformPromise];
                     case 1:
                         res = _a.sent();
                         expect(res).toBe(VALID_TRANSFORME_TEXT);
@@ -125,9 +127,7 @@ describe("rot13 service client", function () {
                                 body: body,
                             }).client;
                             rot13Client = (0, rot13_client_1.createRot13Client)(client);
-                            return [4 /*yield*/, expect(function () {
-                                    return rot13Client.transformAsync(9999, IRRELEVENAT_TEXT);
-                                }).rejects.toThrow("".concat(message, "\nHost:").concat(HOST, ":9999\nStatus: ").concat(status, "\nHeaders: ").concat(JSON.stringify(headers), "\nBody: ").concat(body))];
+                            return [4 /*yield*/, expect(function () { return rot13Client.transform(9999, IRRELEVENAT_TEXT).transformPromise; }).rejects.toThrow("".concat(message, "\nHost:").concat(HOST, ":9999\nStatus: ").concat(status, "\nHeaders: ").concat(JSON.stringify(headers), "\nBody: ").concat(body))];
                         case 1:
                             _e.sent();
                             return [2 /*return*/];
@@ -184,7 +184,8 @@ describe("rot13 service client", function () {
                             body: JSON.stringify({ transformed: "response", foo: "bar" }),
                         }).client;
                         rot13Client = (0, rot13_client_1.createRot13Client)(client);
-                        return [4 /*yield*/, rot13Client.transformAsync(IRRELEVANT_PORT, IRRELEVENAT_TEXT)];
+                        return [4 /*yield*/, rot13Client.transform(IRRELEVANT_PORT, IRRELEVENAT_TEXT)
+                                .transformPromise];
                     case 1:
                         res = _a.sent();
                         expect(res).toBe("response");
@@ -200,7 +201,7 @@ describe("rot13 service client", function () {
                         client = (0, exports.createClient)({}).client;
                         rot13Client = (0, rot13_client_1.createRot13Client)(client);
                         requests = rot13Client.trackRequests().outpouts;
-                        return [4 /*yield*/, rot13Client.transformAsync(9999, "my text")];
+                        return [4 /*yield*/, rot13Client.transform(9999, "my text").transformPromise];
                     case 1:
                         _a.sent();
                         expect(requests).toEqual([
@@ -209,6 +210,108 @@ describe("rot13 service client", function () {
                                 text: "my text",
                             },
                         ]);
+                        return [2 /*return*/];
+                }
+            });
+        }); });
+        it("simulates hangs", function () { return __awaiter(void 0, void 0, void 0, function () {
+            var client, rot13Client, responsePromise;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        client = (0, exports.createClient)({ hang: true }).client;
+                        rot13Client = (0, rot13_client_1.createRot13Client)(client);
+                        responsePromise = rot13Client.transform(9999, "my text").transformPromise;
+                        return [4 /*yield*/, expect(responsePromise).toNotBeAResolvedPromise()];
+                    case 1:
+                        _a.sent();
+                        return [2 /*return*/];
+                }
+            });
+        }); });
+        it("can cancel request", function () { return __awaiter(void 0, void 0, void 0, function () {
+            var _a, client, requests, rot13Client, _b, cancelFn, transformPromise;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
+                    case 0:
+                        _a = (0, exports.createClient)({ hang: true }), client = _a.client, requests = _a.requests;
+                        rot13Client = (0, rot13_client_1.createRot13Client)(client);
+                        _b = rot13Client.transform(9999, "my text"), cancelFn = _b.cancelFn, transformPromise = _b.transformPromise;
+                        cancelFn();
+                        return [4 /*yield*/, expect(function () { return __awaiter(void 0, void 0, void 0, function () { return __generator(this, function (_a) {
+                                switch (_a.label) {
+                                    case 0: return [4 /*yield*/, transformPromise];
+                                    case 1: return [2 /*return*/, _a.sent()];
+                                }
+                            }); }); }).rejects.toThrow("Rot13 request cancelled\nendpoint: /rot-13/transform")];
+                    case 1:
+                        _c.sent();
+                        expect(requests).toEqual([
+                            {
+                                host: "localhost",
+                                port: 9999,
+                                method: "POST",
+                                headers: { "content-type": "application/json" },
+                                path: "/rot-13/transform",
+                                body: '{"text":"my text"}',
+                            },
+                            {
+                                host: "localhost",
+                                port: 9999,
+                                method: "POST",
+                                headers: { "content-type": "application/json" },
+                                path: "/rot-13/transform",
+                                body: '{"text":"my text"}',
+                                cancelled: true,
+                            },
+                        ]);
+                        return [2 /*return*/];
+                }
+            });
+        }); });
+        it("can tracks requests that are cancel", function () { return __awaiter(void 0, void 0, void 0, function () {
+            var client, rot13Client, requests, _a, cancelFn, transformPromise, err_1;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        client = (0, exports.createClient)({ hang: true }).client;
+                        rot13Client = (0, rot13_client_1.createRot13Client)(client);
+                        requests = rot13Client.trackRequests().outpouts;
+                        _a = rot13Client.transform(9999, "my text"), cancelFn = _a.cancelFn, transformPromise = _a.transformPromise;
+                        cancelFn();
+                        _b.label = 1;
+                    case 1:
+                        _b.trys.push([1, 3, , 4]);
+                        return [4 /*yield*/, transformPromise];
+                    case 2:
+                        _b.sent();
+                        return [3 /*break*/, 4];
+                    case 3:
+                        err_1 = _b.sent();
+                        return [3 /*break*/, 4];
+                    case 4:
+                        expect(requests).toEqual([
+                            { port: 9999, text: "my text" },
+                            { port: 9999, text: "my text", cancelled: true },
+                        ]);
+                        return [2 /*return*/];
+                }
+            });
+        }); });
+        it("does not track request after response receive", function () { return __awaiter(void 0, void 0, void 0, function () {
+            var client, rot13Client, requests, _a, cancelFn, transformPromise;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        client = (0, exports.createClient)({}).client;
+                        rot13Client = (0, rot13_client_1.createRot13Client)(client);
+                        requests = rot13Client.trackRequests().outpouts;
+                        _a = rot13Client.transform(9999, "my text"), cancelFn = _a.cancelFn, transformPromise = _a.transformPromise;
+                        return [4 /*yield*/, transformPromise];
+                    case 1:
+                        _b.sent();
+                        cancelFn();
+                        expect(requests).toEqual([{ port: 9999, text: "my text" }]);
                         return [2 /*return*/];
                 }
             });

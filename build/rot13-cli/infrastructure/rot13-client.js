@@ -1,4 +1,15 @@
 "use strict";
+var __assign = (this && this.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -45,6 +56,7 @@ var ramda_1 = require("ramda");
 var trackOutput_1 = require("../../infrastructure/utils/trackOutput");
 var HOST = "localhost";
 var REQUEST_EVENT = "REQUEST_EVENT";
+var END_POINT = "/rot-13/transform";
 var responseErrorBuilder = function (_a) {
     var res = _a.res, port = _a.port;
     return function (message) {
@@ -77,31 +89,50 @@ var parseBody = function (_a) {
     }
 };
 var validateAndParseResponse = (0, ramda_1.pipe)(validateResponse, parseBody);
+var validateAndParseResponseAsync = function (_a) {
+    var responsePromise = _a.responsePromise, port = _a.port;
+    return __awaiter(void 0, void 0, void 0, function () {
+        var _b;
+        var _c;
+        return __generator(this, function (_d) {
+            switch (_d.label) {
+                case 0:
+                    _b = validateAndParseResponse;
+                    _c = { port: port };
+                    return [4 /*yield*/, responsePromise];
+                case 1: return [2 /*return*/, _b.apply(void 0, [(_c.res = _d.sent(), _c)])];
+            }
+        });
+    });
+};
 var createRot13Client = function (client) {
     var emitter = new events_1.default();
     return {
-        transformAsync: function (port, textToTransform) { return __awaiter(void 0, void 0, void 0, function () {
-            var res;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, client.requestAsync({
-                            host: HOST,
-                            port: port,
-                            path: "/rot-13/transform",
-                            method: "POST",
-                            headers: { "content-type": "application/json" },
-                            body: JSON.stringify({ text: textToTransform }),
-                        })];
-                    case 1:
-                        res = _a.sent();
-                        emitter.emit(REQUEST_EVENT, {
-                            port: port,
-                            text: textToTransform,
-                        });
-                        return [2 /*return*/, validateAndParseResponse({ port: port, res: res })];
-                }
+        transform: function (port, textToTransform) {
+            var requestData = {
+                port: port,
+                text: textToTransform,
+            };
+            var _a = client.request({
+                host: HOST,
+                port: port,
+                path: END_POINT,
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({ text: textToTransform }),
+            }), responsePromise = _a.responsePromise, httpClientCancelFn = _a.cancelFn;
+            emitter.emit(REQUEST_EVENT, requestData);
+            var transformPromise = validateAndParseResponseAsync({
+                port: port,
+                responsePromise: responsePromise,
             });
-        }); },
+            var cancelFn = function () {
+                var cancelled = httpClientCancelFn("Rot13 request cancelled\nendpoint: ".concat(END_POINT));
+                if (cancelled)
+                    emitter.emit(REQUEST_EVENT, __assign(__assign({}, requestData), { cancelled: true }));
+            };
+            return { transformPromise: transformPromise, cancelFn: cancelFn };
+        },
         trackRequests: function () { return (0, trackOutput_1.trackOutput)(emitter, REQUEST_EVENT); },
     };
 };

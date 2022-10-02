@@ -53,7 +53,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var http_1 = __importDefault(require("http"));
 var http_client_1 = require("../http-client");
 var HOST = "localhost";
-var PORT = 3274;
+var PORT = 3287;
 var createSpyServer = function () {
     var server = http_1.default.createServer();
     var lastRequest;
@@ -86,7 +86,8 @@ var createSpyServer = function () {
                                     var key = _a[0], value = _a[1];
                                     res.setHeader(key, value);
                                 });
-                                res.end(nextResponse.body);
+                                if (!nextResponse.hang)
+                                    res.end(nextResponse.body);
                             });
                         });
                         server.listen(PORT);
@@ -115,6 +116,12 @@ var createSpyServer = function () {
         },
     };
 };
+var IRELEVENAT_REQUEST = {
+    host: HOST,
+    port: PORT,
+    method: "GET",
+    path: "/my-path",
+};
 describe("HTTP client", function () {
     var server;
     beforeAll(function () { return __awaiter(void 0, void 0, void 0, function () {
@@ -142,19 +149,61 @@ describe("HTTP client", function () {
             }
         });
     }); });
+    var makeRequestAsync = function (_a) {
+        var _b = _a.host, host = _b === void 0 ? HOST : _b, _c = _a.port, port = _c === void 0 ? PORT : _c, _d = _a.method, method = _d === void 0 ? "post" : _d, headers = _a.headers, body = _a.body, _e = _a.path, path = _e === void 0 ? "/my-path" : _e;
+        return __awaiter(void 0, void 0, void 0, function () {
+            var client, response;
+            return __generator(this, function (_f) {
+                switch (_f.label) {
+                    case 0:
+                        client = http_client_1.httpClient.create();
+                        response = client.request({
+                            host: host,
+                            port: port,
+                            method: method,
+                            headers: headers,
+                            body: body,
+                            path: path,
+                        });
+                        return [4 /*yield*/, response.responsePromise];
+                    case 1: return [2 /*return*/, _f.sent()];
+                }
+            });
+        });
+    };
+    var makeNullRequestAsync = function (_a) {
+        var _b = _a.client, client = _b === void 0 ? http_client_1.httpClient.createNull() : _b, _c = _a.host, host = _c === void 0 ? HOST : _c, _d = _a.port, port = _d === void 0 ? PORT : _d, _e = _a.method, method = _e === void 0 ? "post" : _e, headers = _a.headers, body = _a.body, _f = _a.path, path = _f === void 0 ? "/my-path" : _f;
+        return __awaiter(void 0, void 0, void 0, function () {
+            var response;
+            return __generator(this, function (_g) {
+                switch (_g.label) {
+                    case 0:
+                        response = client.request({
+                            host: host,
+                            port: port,
+                            method: method,
+                            headers: headers,
+                            body: body,
+                            path: path,
+                        });
+                        return [4 /*yield*/, response.responsePromise];
+                    case 1: return [2 /*return*/, _g.sent()];
+                }
+            });
+        });
+    };
     describe("Real implementation", function () {
         it("performs request and returns a response", function () { return __awaiter(void 0, void 0, void 0, function () {
-            var client, response;
+            var response;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        client = http_client_1.httpClient.create();
                         server.setResponse({
                             status: 999,
                             headers: { myRequestHeader: "my value" },
                             body: "my-body",
                         });
-                        return [4 /*yield*/, client.requestAsync({
+                        return [4 /*yield*/, makeRequestAsync({
                                 host: HOST,
                                 port: PORT,
                                 method: "POST",
@@ -180,17 +229,14 @@ describe("HTTP client", function () {
             });
         }); });
         it("does not require headers and body", function () { return __awaiter(void 0, void 0, void 0, function () {
-            var client;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0:
-                        client = http_client_1.httpClient.create();
-                        return [4 /*yield*/, client.requestAsync({
-                                host: HOST,
-                                port: PORT,
-                                method: "GET",
-                                path: "/my-path",
-                            })];
+                    case 0: return [4 /*yield*/, makeRequestAsync({
+                            host: HOST,
+                            port: PORT,
+                            method: "GET",
+                            path: "/my-path",
+                        })];
                     case 1:
                         _a.sent();
                         expect(server.getLastRequest()).toEqual({
@@ -205,19 +251,10 @@ describe("HTTP client", function () {
         }); });
     });
     describe("nullability", function () {
-        var IRELEVENAT_REQUEST = {
-            host: HOST,
-            port: PORT,
-            method: "GET",
-            path: "/my-path",
-        };
         it("does not talk to network", function () { return __awaiter(void 0, void 0, void 0, function () {
-            var client;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0:
-                        client = http_client_1.httpClient.createNull();
-                        return [4 /*yield*/, client.requestAsync(IRELEVENAT_REQUEST)];
+                    case 0: return [4 /*yield*/, makeNullRequestAsync(IRELEVENAT_REQUEST)];
                     case 1:
                         _a.sent();
                         expect(server.getLastRequest()).toBe(null);
@@ -226,12 +263,10 @@ describe("HTTP client", function () {
             });
         }); });
         it("provides a default response", function () { return __awaiter(void 0, void 0, void 0, function () {
-            var client, response;
+            var response;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0:
-                        client = http_client_1.httpClient.createNull();
-                        return [4 /*yield*/, client.requestAsync(IRELEVENAT_REQUEST)];
+                    case 0: return [4 /*yield*/, makeNullRequestAsync(IRELEVENAT_REQUEST)];
                     case 1:
                         response = _a.sent();
                         expect(response).toEqual({
@@ -255,7 +290,8 @@ describe("HTTP client", function () {
                             ],
                             "/endpoint/2": [{ status: 301, body: "endpoint 2 body" }],
                         });
-                        return [4 /*yield*/, client.requestAsync({
+                        return [4 /*yield*/, makeNullRequestAsync({
+                                client: client,
                                 host: HOST,
                                 port: PORT,
                                 method: "GET",
@@ -263,7 +299,8 @@ describe("HTTP client", function () {
                             })];
                     case 1:
                         response1A = _a.sent();
-                        return [4 /*yield*/, client.requestAsync({
+                        return [4 /*yield*/, makeNullRequestAsync({
+                                client: client,
                                 host: HOST,
                                 port: PORT,
                                 method: "GET",
@@ -271,7 +308,8 @@ describe("HTTP client", function () {
                             })];
                     case 2:
                         response1B = _a.sent();
-                        return [4 /*yield*/, client.requestAsync({
+                        return [4 /*yield*/, makeNullRequestAsync({
+                                client: client,
                                 host: HOST,
                                 port: PORT,
                                 method: "GET",
@@ -305,7 +343,8 @@ describe("HTTP client", function () {
                     case 0:
                         client = http_client_1.httpClient.createNull();
                         requests = client.trackRequests().outpouts;
-                        return [4 /*yield*/, client.requestAsync({
+                        return [4 /*yield*/, makeNullRequestAsync({
+                                client: client,
                                 host: HOST,
                                 port: PORT,
                                 method: "post",
@@ -325,6 +364,197 @@ describe("HTTP client", function () {
                                 path: "/my-path",
                             },
                         ]);
+                        return [2 /*return*/];
+                }
+            });
+        }); });
+    });
+    it("simulates hangs", function () { return __awaiter(void 0, void 0, void 0, function () {
+        var client, request;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    client = http_client_1.httpClient.createNull({
+                        "/endpoint": [{ hang: true }],
+                    });
+                    request = makeNullRequestAsync({
+                        client: client,
+                        host: HOST,
+                        port: PORT,
+                        method: "post",
+                        headers: { myheaders: "my value" },
+                        body: "my body",
+                        path: "/endpoint",
+                    });
+                    return [4 /*yield*/, expect(request).toNotBeAResolvedPromise()];
+                case 1:
+                    _a.sent();
+                    return [2 /*return*/];
+            }
+        });
+    }); });
+    describe("cancellation", function () {
+        it("can cancel request", function () { return __awaiter(void 0, void 0, void 0, function () {
+            var client, _a, responsePromise, cancelFn, cancelled;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        server.setResponse({ hang: true, status: 200, headers: {} });
+                        client = http_client_1.httpClient.create();
+                        _a = client.request(IRELEVENAT_REQUEST), responsePromise = _a.responsePromise, cancelFn = _a.cancelFn;
+                        cancelled = cancelFn("my cancel message");
+                        expect(cancelled).toBe(true);
+                        return [4 /*yield*/, expect(function () { return __awaiter(void 0, void 0, void 0, function () {
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0: return [4 /*yield*/, responsePromise];
+                                        case 1:
+                                            _a.sent();
+                                            return [2 /*return*/];
+                                    }
+                                });
+                            }); }).rejects.toThrow("my cancel message")];
+                    case 1:
+                        _b.sent();
+                        return [2 /*return*/];
+                }
+            });
+        }); });
+        it("ignores additional request to cancel", function () { return __awaiter(void 0, void 0, void 0, function () {
+            var client, _a, responsePromise, cancelFn, cancelled;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        server.setResponse({ hang: true, status: 200, headers: {} });
+                        client = http_client_1.httpClient.create();
+                        _a = client.request(IRELEVENAT_REQUEST), responsePromise = _a.responsePromise, cancelFn = _a.cancelFn;
+                        cancelFn("first cancel");
+                        cancelled = cancelFn("second cancel");
+                        return [4 /*yield*/, expect(function () { return __awaiter(void 0, void 0, void 0, function () {
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0: return [4 /*yield*/, responsePromise];
+                                        case 1:
+                                            _a.sent();
+                                            return [2 /*return*/];
+                                    }
+                                });
+                            }); }).rejects.toThrow("first cancel")];
+                    case 1:
+                        _b.sent();
+                        expect(cancelled).toBe(false);
+                        return [2 /*return*/];
+                }
+            });
+        }); });
+        it("ignores cancellation after response has already been received", function () { return __awaiter(void 0, void 0, void 0, function () {
+            var client, _a, responsePromise, cancelFn, cancelled;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        server.setResponse({ status: 200, headers: {} });
+                        client = http_client_1.httpClient.create();
+                        _a = client.request(IRELEVENAT_REQUEST), responsePromise = _a.responsePromise, cancelFn = _a.cancelFn;
+                        return [4 /*yield*/, responsePromise];
+                    case 1:
+                        _b.sent();
+                        cancelled = cancelFn("should not work when the response is already received");
+                        expect(cancelled).toBe(false);
+                        return [2 /*return*/];
+                }
+            });
+        }); });
+        it("tracks request that are cancelled", function () { return __awaiter(void 0, void 0, void 0, function () {
+            var client, requests, _a, responsePromise, cancelFn, err_1;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        server.setResponse({ hang: true, status: 200, headers: {} });
+                        client = http_client_1.httpClient.create();
+                        requests = client.trackRequests().outpouts;
+                        _a = client.request(IRELEVENAT_REQUEST), responsePromise = _a.responsePromise, cancelFn = _a.cancelFn;
+                        cancelFn("cancel request");
+                        _b.label = 1;
+                    case 1:
+                        _b.trys.push([1, 3, , 4]);
+                        return [4 /*yield*/, responsePromise];
+                    case 2:
+                        _b.sent();
+                        return [3 /*break*/, 4];
+                    case 3:
+                        err_1 = _b.sent();
+                        return [3 /*break*/, 4];
+                    case 4:
+                        expect(requests).toEqual([
+                            {
+                                host: "localhost",
+                                port: 3287,
+                                method: "GET",
+                                headers: {},
+                                path: "/my-path",
+                                body: "",
+                            },
+                            {
+                                host: "localhost",
+                                port: 3287,
+                                method: "GET",
+                                headers: {},
+                                path: "/my-path",
+                                body: "",
+                                cancelled: true,
+                            },
+                        ]);
+                        return [2 /*return*/];
+                }
+            });
+        }); });
+        it("does not track request that occurs after response", function () { return __awaiter(void 0, void 0, void 0, function () {
+            var client, requests, _a, responsePromise, cancelFn;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        server.setResponse({ status: 200, headers: {} });
+                        client = http_client_1.httpClient.create();
+                        requests = client.trackRequests().outpouts;
+                        _a = client.request(IRELEVENAT_REQUEST), responsePromise = _a.responsePromise, cancelFn = _a.cancelFn;
+                        return [4 /*yield*/, responsePromise];
+                    case 1:
+                        _b.sent();
+                        cancelFn("cancel request");
+                        expect(requests).toEqual([
+                            {
+                                host: "localhost",
+                                port: 3287,
+                                method: "GET",
+                                headers: {},
+                                path: "/my-path",
+                                body: "",
+                            },
+                        ]);
+                        return [2 /*return*/];
+                }
+            });
+        }); });
+    });
+    describe("nullability", function () {
+        it("cancel request", function () { return __awaiter(void 0, void 0, void 0, function () {
+            var client, _a, responsePromise, cancelFn;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        client = http_client_1.httpClient.createNull({
+                            "/endpoint": [{ hang: true, status: 200 }],
+                        });
+                        _a = client.request(IRELEVENAT_REQUEST), responsePromise = _a.responsePromise, cancelFn = _a.cancelFn;
+                        cancelFn("cancel request");
+                        return [4 /*yield*/, expect(function () { return __awaiter(void 0, void 0, void 0, function () { return __generator(this, function (_a) {
+                                switch (_a.label) {
+                                    case 0: return [4 /*yield*/, responsePromise];
+                                    case 1: return [2 /*return*/, _a.sent()];
+                                }
+                            }); }); }).rejects.toThrow("cancel request")];
+                    case 1:
+                        _b.sent();
                         return [2 /*return*/];
                 }
             });

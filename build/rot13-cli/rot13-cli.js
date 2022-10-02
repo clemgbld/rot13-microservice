@@ -37,10 +37,21 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.runAsync = void 0;
-var runAsync = function (commandLine, rot13Client) { return __awaiter(void 0, void 0, void 0, function () {
-    var args, port, text, response, err_1;
+var timeoutAsync = function (clock, cancelFn) { return __awaiter(void 0, void 0, void 0, function () {
     return __generator(this, function (_a) {
         switch (_a.label) {
+            case 0: return [4 /*yield*/, clock.waitAsync(5000)];
+            case 1:
+                _a.sent();
+                cancelFn();
+                throw new Error("Rot13 service failed due to a timeout");
+        }
+    });
+}); };
+var runAsync = function (commandLine, rot13Client, clock) { return __awaiter(void 0, void 0, void 0, function () {
+    var args, port, text, _a, transformPromise, cancelFn, response, err_1;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
             case 0:
                 args = commandLine.args();
                 if (args.length !== 2)
@@ -49,16 +60,20 @@ var runAsync = function (commandLine, rot13Client) { return __awaiter(void 0, vo
                 if (Number.isNaN(+port)) {
                     return [2 /*return*/, commandLine.writeOutpout("please provide a valid port as first argument")];
                 }
-                _a.label = 1;
+                _a = rot13Client.transform(+port, text), transformPromise = _a.transformPromise, cancelFn = _a.cancelFn;
+                _b.label = 1;
             case 1:
-                _a.trys.push([1, 3, , 4]);
-                return [4 /*yield*/, rot13Client.transformAsync(+port, text)];
+                _b.trys.push([1, 3, , 4]);
+                return [4 /*yield*/, Promise.race([
+                        transformPromise,
+                        timeoutAsync(clock, cancelFn),
+                    ])];
             case 2:
-                response = _a.sent();
+                response = _b.sent();
                 commandLine.writeOutpout(response);
                 return [3 /*break*/, 4];
             case 3:
-                err_1 = _a.sent();
+                err_1 = _b.sent();
                 commandLine.writeOutpout(err_1.message);
                 return [3 /*break*/, 4];
             case 4: return [2 /*return*/];

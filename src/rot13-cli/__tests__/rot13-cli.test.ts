@@ -92,14 +92,19 @@ describe("rot13-cli", () => {
     ]);
   });
 
-  it("outputs an error when the service timeout", async () => {
+  it("timesout rot13 client when Rot13 client respond too slowly", async () => {
     const { fakeCommandLine, outpouts } = setupCommandLine();
     const fakeClock = clock.createNull({ now: 0 });
     const rot13Client = createFakeRot13Client({ status: 200, hang: true });
+    const { outpouts: requests } = rot13Client.trackRequests();
     const runPromise = runAsync(fakeCommandLine, rot13Client, fakeClock);
     fakeClock.advanceNullAsync(TIMEOUT_TIME);
 
     await expect(runPromise).toBeAResolvedPromise();
+    expect(requests).toEqual([
+      { port: 9999, text: "valid-body" },
+      { port: 9999, text: "valid-body", cancelled: true },
+    ]);
     expect(outpouts).toEqual(["Rot13 service failed due to a timeout\n"]);
   });
 });

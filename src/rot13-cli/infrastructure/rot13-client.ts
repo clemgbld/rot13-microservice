@@ -68,7 +68,7 @@ export interface Rot13Client {
   transform: (
     port: number,
     textToTransform: string
-  ) => { transformPromise: Promise<any> };
+  ) => { transformPromise: Promise<any>; cancelFn: () => void };
   trackRequests: () => {
     outpouts: Output[];
     turnOffTracking: () => void;
